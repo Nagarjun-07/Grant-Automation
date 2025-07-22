@@ -21,6 +21,7 @@ import {
 import { analyzeMarket as analyzeMarketFlow, type MarketAnalysisInput } from '@/ai/flows/analyze-market';
 import { analyzeIp as analyzeIpFlow, type IpAnalysisInput } from '@/ai/flows/analyze-ip';
 import { analyzeRegulatory as analyzeRegulatoryFlow, type RegulatoryAnalysisInput } from '@/ai/flows/analyze-regulatory';
+import { extractTextFromDocument as extractTextFromDocumentFlow, type ExtractTextFromDocumentInput } from '@/ai/flows/extract-text-from-document';
 
 
 export async function summarize(input: { documentText: string }) {
@@ -93,4 +94,13 @@ export async function analyzeRegulatory(input: RegulatoryAnalysisInput) {
         console.error(e);
         return null;
     }
+}
+
+export async function extractText(input: ExtractTextFromDocumentInput) {
+  try {
+    return await extractTextFromDocumentFlow(input);
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
 }

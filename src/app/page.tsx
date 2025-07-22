@@ -72,7 +72,7 @@ const RoadmapFormSchema = z.object({
 
 export default function DashboardPage() {
   const [docText, setDocText] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
   const [activeTab, setActiveTab] = useState('insights');
   const [analysis, setAnalysis] = useState<AnalysisState>({
     summary: null,
@@ -197,13 +197,29 @@ export default function DashboardPage() {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      setIsExtracting(true);
       const reader = new FileReader();
       reader.onload = async (e) => {
-        const text = e.target?.result as string;
-        await handleProcessDocument(text);
-        handleTabChange('insights');
+        const dataUri = e.target?.result as string;
+        try {
+            const result = await actions.extractText({ documentDataUri: dataUri });
+            if (result?.extractedText) {
+                await handleProcessDocument(result.extractedText);
+                handleTabChange('insights');
+            } else {
+                throw new Error('Text extraction returned no content.');
+            }
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: 'File Processing Error',
+                description: 'Could not extract text from the uploaded file. Please ensure it is a valid document.',
+            });
+        } finally {
+            setIsExtracting(false);
+        }
       };
-      reader.readAsText(file);
+      reader.readAsDataURL(file);
     }
   };
 
@@ -232,15 +248,42 @@ export default function DashboardPage() {
               Provide Your Document
             </CardTitle>
             <CardDescription>
-              Upload a file, paste your bioreactor's technical documentation, or load a sample document to begin.
+              Upload a file (PDF, PNG, JPG), paste technical documentation, or load a sample document to begin.
             </CardDescription>
           </CardHeader>
           <CardContent>
-             <Tabs defaultValue="paste" className="w-full">
+             <Tabs defaultValue="upload" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="paste">Paste Text</TabsTrigger>
                 <TabsTrigger value="upload">Upload File</TabsTrigger>
+                <TabsTrigger value="paste">Paste Text</TabsTrigger>
               </TabsList>
+               <TabsContent value="upload" className="pt-4">
+                 <div className="flex flex-col items-center justify-center h-[200px] border-2 border-dashed border-muted rounded-md p-4 text-center">
+                    {isExtracting ? (
+                        <>
+                            <Loader2 className="w-12 h-12 text-muted-foreground mb-4 animate-spin" />
+                            <h3 className="text-lg font-medium text-foreground">Extracting Text...</h3>
+                            <p className="text-sm text-muted-foreground">Please wait while the AI processes your document.</p>
+                        </>
+                    ) : (
+                        <>
+                            <UploadCloud className="w-12 h-12 text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-medium text-foreground">Click to upload a file</h3>
+                            <p className="text-sm text-muted-foreground">PDF, PNG, JPG, TXT, or MD files</p>
+                            <Button variant="outline" className="mt-4" onClick={() => fileInputRef.current?.click()}>
+                                Browse Files
+                            </Button>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                onChange={handleFileChange}
+                                accept=".pdf,.png,.jpg,.jpeg,.txt,.md"
+                            />
+                        </>
+                    )}
+                </div>
+              </TabsContent>
               <TabsContent value="paste" className="pt-4">
                  <Textarea 
                   id="doc-text-area"
@@ -266,34 +309,15 @@ export default function DashboardPage() {
                   Analyze Pasted Text
                 </Button>
               </TabsContent>
-              <TabsContent value="upload" className="pt-4">
-                <div className="flex flex-col items-center justify-center h-[200px] border-2 border-dashed border-muted rounded-md p-4 text-center">
-                    <UploadCloud className="w-12 h-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium text-foreground">Click to upload a file</h3>
-                    <p className="text-sm text-muted-foreground">Select a .txt, .md or other text file.</p>
-                     <Button variant="outline" className="mt-4" onClick={() => fileInputRef.current?.click()}>
-                        Browse Files
-                      </Button>
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        onChange={handleFileChange}
-                        accept=".txt,.md,text/plain,text/markdown"
-                      />
-                </div>
-              </TabsContent>
             </Tabs>
           </CardContent>
           <CardFooter className="flex justify-center">
              <Button
                 variant="link"
                 onClick={() => {
-                    (document.getElementById('doc-text-area') as HTMLTextAreaElement).value = SAMPLE_TECHNICAL_DOCUMENTATION;
-                    const text = SAMPLE_TECHNICAL_DOCUMENTATION;
-                    handleProcessDocument(text).then(() => handleTabChange('insights'));
+                    handleProcessDocument(SAMPLE_TECHNICAL_DOCUMENTATION).then(() => handleTabChange('insights'));
                 }}
-              >Or load sample data to see it in action</Button>
+              >Or load sample text data to see it in action</Button>
           </CardFooter>
         </Card>
       ) : (
@@ -304,10 +328,10 @@ export default function DashboardPage() {
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <FileText className="text-primary" />
-                      Uploaded Document
+                      Extracted Document Text
                     </CardTitle>
                     <CardDescription>
-                      The source text used for the analysis.
+                      The source text used for the analysis, extracted by AI from your document.
                     </CardDescription>
                   </div>
                    <Button variant="secondary" size="sm" onClick={() => setDocText('')}>Start Over</Button>
