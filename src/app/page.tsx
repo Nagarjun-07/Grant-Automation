@@ -430,9 +430,42 @@ export default function DashboardPage() {
                         <Form {...roadmapForm}>
                             <form onSubmit={roadmapForm.handleSubmit(onGenerateRoadmap)} className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <FormField control={roadmapForm.control} name="productionScale" render={({ field }) => ( <FormItem> <FormLabel>Production Scale</FormLabel> <FormControl> <Input placeholder="e.g., Pilot Scale" {...field} /> </FormControl> </FormItem> )}/>
-                                    <FormField control={roadmapForm.control} name="costPerUnit" render={({ field }) => ( <FormItem> <FormLabel>Cost/Unit ($)</FormLabel> <FormControl> <Input type="number" placeholder="e.g., 150" {...field} /> </FormControl> </FormItem> )}/>
-                                    <FormField control={roadmapForm.control} name="revenuePerUnit" render={({ field }) => ( <FormItem> <FormLabel>Revenue/Unit ($)</FormLabel> <FormControl> <Input type="number" placeholder="e.g., 500" {...field} /> </FormControl> </FormItem> )}/>
+                                    <FormField
+                                        control={roadmapForm.control}
+                                        name="productionScale"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Production Scale</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="e.g., Pilot Scale" {...field} />
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={roadmapForm.control}
+                                        name="costPerUnit"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Cost/Unit ($)</FormLabel>
+                                                <FormControl>
+                                                    <Input type="number" placeholder="e.g., 150" {...field} />
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={roadmapForm.control}
+                                        name="revenuePerUnit"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Revenue/Unit ($)</FormLabel>
+                                                <FormControl>
+                                                    <Input type="number" placeholder="e.g., 500" {...field} />
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
                                 </div>
                                 <Button type="submit" disabled={loadingStates.roadmap}>
                                     {loadingStates.roadmap && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
