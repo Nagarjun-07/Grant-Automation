@@ -31,18 +31,32 @@ export async function getTRLBreakdown(input: TRLBreakdownInput): Promise<TRLBrea
   return getTRLBreakdownFlow(input);
 }
 
+const TRLPromptInputSchema = z.object({
+    technicalDocumentation: z.string(),
+    components: z.array(z.string()),
+});
+
+const TRLPromptOutputSchema = z.record(
+    z.string(),
+    z.object({
+        trl: z.number(),
+        justification: z.string(),
+    })
+);
+
+
 const prompt = ai.definePrompt({
   name: 'getTRLBreakdownPrompt',
-  input: {schema: TRLBreakdownInputSchema},
-  output: {schema: TRLBreakdownOutputSchema},
-  prompt: `You are a TRL assessment expert. Analyze the technical content and assign a TRL (1-9) to each mentioned component (e.g., sensor, control system, pump, valve, bioreactor, reactor). 
+  input: {schema: TRLPromptInputSchema},
+  output: {schema: TRLPromptOutputSchema},
+  prompt: `You are a TRL assessment expert. Analyze the technical content and assign a TRL (1-9) to each of the following components: {{#each components}}{{{this}}}, {{/each}}. 
   
-  Return ONLY a valid JSON object mapping components to their TRL levels, justifications, and a 'timestamp' field.
+  Return ONLY a valid JSON object mapping the components you were asked to assess to their TRL levels and justifications. Do not assess any other components.
 
   Example Output Format:
   {
-    "sensor": {"trl": 4, "justification": "Lab validated", "timestamp": "2025-07-22 13:34:00 IST"},
-    "pump": {"trl": 3, "justification": "Proof of concept", "timestamp": "2025-07-22 13:34:00 IST"}
+    "sensor": {"trl": 4, "justification": "Lab validated"},
+    "pump": {"trl": 3, "justification": "Proof of concept"}
   }
 
   Technical Documentation:
@@ -56,8 +70,43 @@ const getTRLBreakdownFlow = ai.defineFlow(
     inputSchema: TRLBreakdownInputSchema,
     outputSchema: TRLBreakdownOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async ({ technicalDocumentation }) => {
+    // 1. Identify components first, like in the Python example
+    const componentRegex = /(bioreactor|reactor|sensor|control system|pump|valve)/gi;
+    const foundComponents = [...new Set(technicalDocumentation.match(componentRegex)?.map(c => c.toLowerCase()) || [])];
+
+    if (foundComponents.length === 0) {
+      return {};
+    }
+
+    // 2. Call the AI with the found components
+    const { output } = await prompt({
+        technicalDocumentation,
+        components: foundComponents,
+    });
+
+    const validatedOutput: TRLBreakdownOutput = {};
+    const currentTime = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }).replace(/,/, '') + ' IST';
+    
+    // 3. Validate and enhance the AI's response
+    for (const component of foundComponents) {
+        const assessment = output?.[component];
+
+        if (assessment && typeof assessment.trl === 'number' && assessment.trl >= 1 && assessment.trl <= 9) {
+            validatedOutput[component] = {
+                ...assessment,
+                timestamp: currentTime,
+            };
+        } else {
+            // If the AI fails for a component, add a default value
+            validatedOutput[component] = {
+                trl: 1,
+                justification: "No specific data found, defaulting to theoretical stage.",
+                timestamp: currentTime,
+            };
+        }
+    }
+    
+    return validatedOutput;
   }
 );
