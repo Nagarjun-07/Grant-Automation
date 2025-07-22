@@ -1,6 +1,5 @@
 import { GrantProposalGenerator } from "@/components/grants/grant-proposal-generator";
 import { GrantSearch } from "@/components/grants/grant-search";
-
 export default function GrantsPage() {
     return (
         <div className="container mx-auto p-4 md:p-8">
