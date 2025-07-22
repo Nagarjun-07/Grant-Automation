@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -94,6 +94,7 @@ export default function DashboardPage() {
   });
 
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const trlForm = useForm<z.infer<typeof TRLFormSchema>>({
     resolver: zodResolver(TRLFormSchema),
@@ -192,6 +193,19 @@ export default function DashboardPage() {
         return { roadmap: res?.roadmap };
     }, 'roadmap');
   };
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const text = e.target?.result as string;
+        await handleProcessDocument(text);
+        handleTabChange('insights');
+      };
+      reader.readAsText(file);
+    }
+  };
 
   const renderContent = (content: string | null | undefined, isLoading: boolean, title: string) => {
     if (isLoading) return <Skeleton className="h-48 w-full" />;
@@ -215,41 +229,71 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <UploadCloud className="text-primary" />
-              Upload Your Document
+              Provide Your Document
             </CardTitle>
             <CardDescription>
-              Paste your bioreactor's technical documentation below to begin the analysis. You can also load a sample document to see how it works.
+              Upload a file, paste your bioreactor's technical documentation, or load a sample document to begin.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Textarea 
-              id="doc-text-area"
-              placeholder="Paste your technical documentation here..."
-              className="min-h-[250px] text-base"
-            />
+             <Tabs defaultValue="paste" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="paste">Paste Text</TabsTrigger>
+                <TabsTrigger value="upload">Upload File</TabsTrigger>
+              </TabsList>
+              <TabsContent value="paste" className="pt-4">
+                 <Textarea 
+                  id="doc-text-area"
+                  placeholder="Paste your technical documentation here..."
+                  className="min-h-[200px] text-base"
+                />
+                 <Button
+                  className="w-full mt-4"
+                  onClick={() => {
+                    const text = (document.getElementById('doc-text-area') as HTMLTextAreaElement).value;
+                    if(text.trim().length > 0) {
+                        handleProcessDocument(text).then(() => handleTabChange('insights'));
+                    } else {
+                        toast({
+                            variant: 'destructive',
+                            title: 'Empty Document',
+                            description: 'Please paste some content.',
+                        });
+                    }
+                  }}
+                >
+                    <Sparkles className="mr-2 h-4 w-4" />
+                  Analyze Pasted Text
+                </Button>
+              </TabsContent>
+              <TabsContent value="upload" className="pt-4">
+                <div className="flex flex-col items-center justify-center h-[200px] border-2 border-dashed border-muted rounded-md p-4 text-center">
+                    <UploadCloud className="w-12 h-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium text-foreground">Click to upload a file</h3>
+                    <p className="text-sm text-muted-foreground">Select a .txt, .md or other text file.</p>
+                     <Button variant="outline" className="mt-4" onClick={() => fileInputRef.current?.click()}>
+                        Browse Files
+                      </Button>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        onChange={handleFileChange}
+                        accept=".txt,.md,text/plain,text/markdown"
+                      />
+                </div>
+              </TabsContent>
+            </Tabs>
           </CardContent>
-          <CardFooter className="flex justify-between items-center">
+          <CardFooter className="flex justify-center">
              <Button
-                variant="outline"
-                onClick={() => (document.getElementById('doc-text-area') as HTMLTextAreaElement).value = SAMPLE_TECHNICAL_DOCUMENTATION}
-              >Load Sample Data</Button>
-            <Button
-              onClick={() => {
-                const text = (document.getElementById('doc-text-area') as HTMLTextAreaElement).value;
-                if(text.trim().length > 0) {
+                variant="link"
+                onClick={() => {
+                    (document.getElementById('doc-text-area') as HTMLTextAreaElement).value = SAMPLE_TECHNICAL_DOCUMENTATION;
+                    const text = SAMPLE_TECHNICAL_DOCUMENTATION;
                     handleProcessDocument(text).then(() => handleTabChange('insights'));
-                } else {
-                    toast({
-                        variant: 'destructive',
-                        title: 'Empty Document',
-                        description: 'Please paste some content or load sample data.',
-                    });
-                }
-              }}
-            >
-                <Sparkles className="mr-2 h-4 w-4" />
-              Analyze Document
-            </Button>
+                }}
+              >Or load sample data to see it in action</Button>
           </CardFooter>
         </Card>
       ) : (
