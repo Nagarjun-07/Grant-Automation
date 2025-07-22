@@ -6,3 +6,6 @@ import '@/ai/flows/assess-trl-level.ts';
 import '@/ai/flows/generate-grant-proposal.ts';
 import '@/ai/flows/generate-experimental-validation.ts';
 import '@/ai/flows/summarize-technical-documentation.ts';
+import '@/ai/flows/analyze-market.ts';
+import '@/ai/flows/analyze-ip.ts';
+import '@/ai/flows/analyze-regulatory.ts';

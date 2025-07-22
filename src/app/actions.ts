@@ -18,6 +18,9 @@ import {
   generateGrantProposal, 
   type GenerateGrantProposalInput 
 } from '@/ai/flows/generate-grant-proposal';
+import { analyzeMarket as analyzeMarketFlow, type MarketAnalysisInput } from '@/ai/flows/analyze-market';
+import { analyzeIp as analyzeIpFlow, type IpAnalysisInput } from '@/ai/flows/analyze-ip';
+import { analyzeRegulatory as analyzeRegulatoryFlow, type RegulatoryAnalysisInput } from '@/ai/flows/analyze-regulatory';
 
 
 export async function summarize(input: { documentText: string }) {
@@ -59,6 +62,33 @@ export async function generateRoadmap(input: GenerateRandDRoadmapInput) {
 export async function createGrantProposal(input: GenerateGrantProposalInput) {
     try {
         return await generateGrantProposal(input);
+    } catch(e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function analyzeMarket(input: MarketAnalysisInput) {
+    try {
+        return await analyzeMarketFlow(input);
+    } catch(e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function analyzeIp(input: IpAnalysisInput) {
+    try {
+        return await analyzeIpFlow(input);
+    } catch(e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function analyzeRegulatory(input: RegulatoryAnalysisInput) {
+    try {
+        return await analyzeRegulatoryFlow(input);
     } catch(e) {
         console.error(e);
         return null;
