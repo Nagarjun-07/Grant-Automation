@@ -35,18 +35,18 @@ const prompt = ai.definePrompt({
   name: 'getTRLBreakdownPrompt',
   input: {schema: TRLBreakdownInputSchema},
   output: {schema: TRLBreakdownOutputSchema},
-  prompt: `You are an expert in assessing the Technology Readiness Level (TRL) of bioreactor components.
+  prompt: `You are a TRL assessment expert. Analyze the technical content and assign a TRL (1-9) to each mentioned component (e.g., sensor, control system, pump, valve, bioreactor, reactor). 
+  
+  Return ONLY a valid JSON object mapping components to their TRL levels, justifications, and a 'timestamp' field.
 
-  Based on the provided technical documentation, identify the key components of the bioreactor system. For each component, determine the TRL level (1-9), provide a justification for your assessment, and include a timestamp.
-
-  Return ONLY a valid JSON object where each key is a component name and the value is an object containing the TRL, justification, and timestamp. Do not include any other text or formatting. For example:
-
+  Example Output Format:
   {
     "sensor": {"trl": 4, "justification": "Lab validated", "timestamp": "2025-07-22 13:34:00 IST"},
     "pump": {"trl": 3, "justification": "Proof of concept", "timestamp": "2025-07-22 13:34:00 IST"}
   }
 
-  Technical Documentation: {{{technicalDocumentation}}}
+  Technical Documentation:
+  {{{technicalDocumentation}}}
   `,
 });
 
