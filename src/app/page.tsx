@@ -14,7 +14,11 @@ import {
   Scale,
   GanttChartSquare,
   ClipboardCheck,
+  DollarSign,
 } from 'lucide-react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -33,7 +37,10 @@ import * as actions from './actions';
 import { ValidationAndRisksOutput } from '@/ai/flows/generate-experimental-validation';
 import { TRLBreakdownOutput } from '@/ai/flows/assess-trl-level';
 import { RandDPipelineOutput } from '@/ai/flows/generate-r-and-d-roadmap';
+import { SimulateUnitEconomicsOutput } from '@/ai/flows/simulate-unit-economics';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+
 
 const SAMPLE_TECHNICAL_DOCUMENTATION = `The BR-X10 is a novel stirred-tank bioreactor designed for mammalian cell culture. It features a 10L working volume with a borosilicate glass vessel. The system incorporates a magnetic-drive agitation system with a pitched-blade impeller, ensuring low-shear mixing. Key components include the agitation system, vessel, and headplate. Advanced process control is achieved via a dedicated PLC with a user-friendly HMI. Sensors for pH (range 6.0-8.0), dissolved oxygen (DO, 0-100% saturation), and temperature (25-45°C) are integrated. The sparging system uses a microporous sparger for efficient oxygen transfer. The system is designed for batch, fed-batch, and perfusion processes. Sterilization is performed via autoclaving. The headplate includes multiple ports for media addition, sampling, and sensor integration. A peristaltic pump is used for media transfer.`;
 
@@ -42,10 +49,15 @@ type AnalysisState = {
   validationAndRisks: ValidationAndRisksOutput | null;
   trlBreakdown: TRLBreakdownOutput | null;
   randDPipeline: RandDPipelineOutput | null;
-  market: string | null;
-  ip: string | null;
-  regulatory: string | null;
+  unitEconomics: SimulateUnitEconomicsOutput | null;
 };
+
+const economicsSchema = z.object({
+  production_scale: z.coerce.number().min(1, "Production scale must be at least 1."),
+  cost_per_unit: z.coerce.number().min(0, "Cost per unit cannot be negative."),
+  revenue_per_unit: z.coerce.number().min(0, "Revenue per unit cannot be negative."),
+});
+
 
 export default function DashboardPage() {
   const [docText, setDocText] = useState<string>('');
@@ -56,27 +68,32 @@ export default function DashboardPage() {
     validationAndRisks: null,
     trlBreakdown: null,
     randDPipeline: null,
-    market: null,
-    ip: null,
-    regulatory: null,
+    unitEconomics: null,
   });
 
   const [loadingStates, setLoadingStates] = useState({
     insights: false,
     trl: false,
     roadmap: false,
-    market: false,
-    ip: false,
-    regulatory: false,
     validation: false,
+    economics: false,
   });
 
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const form = useForm<z.infer<typeof economicsSchema>>({
+    resolver: zodResolver(economicsSchema),
+    defaultValues: {
+      production_scale: 1000,
+      cost_per_unit: 50,
+      revenue_per_unit: 75,
+    },
+  });
+
   const handleProcessDocument = async (text: string) => {
     setDocText(text);
-    setAnalysis({ summary: null, validationAndRisks: null, trlBreakdown: null, randDPipeline: null, market: null, ip: null, regulatory: null });
+    setAnalysis({ summary: null, validationAndRisks: null, trlBreakdown: null, randDPipeline: null, unitEconomics: null });
     setActiveTab('insights');
   };
 
@@ -103,7 +120,7 @@ export default function DashboardPage() {
 
   const handleTabChange = async (tab: string) => {
     setActiveTab(tab);
-    if (!docText) return;
+    if (!docText && !['economics'].includes(tab)) return;
 
     switch(tab) {
         case 'insights':
@@ -129,23 +146,32 @@ export default function DashboardPage() {
                  runAnalysis('roadmap', async () => ({ randDPipeline: await actions.randDPipeline({ technicalDocumentation: docText }) }), 'randDPipeline');
             }
             break;
-        case 'market':
-             if (!analysis.market) {
-                runAnalysis('market', async () => ({ market: (await actions.analyzeMarket({ technicalDocumentation: docText }))?.analysis }), 'market');
-            }
-            break;
-        case 'ip':
-             if (!analysis.ip) {
-                runAnalysis('ip', async () => ({ ip: (await actions.analyzeIp({ technicalDocumentation: docText }))?.analysis }), 'ip');
-            }
-            break;
-        case 'regulatory':
-            if (!analysis.regulatory) {
-                runAnalysis('regulatory', async () => ({ regulatory: (await actions.analyzeRegulatory({ technicalDocumentation: docText }))?.analysis }), 'regulatory');
-            }
+        case 'economics':
+             // Handled by form submission
             break;
     }
   };
+
+  const onEconomicsSubmit = async (values: z.infer<typeof economicsSchema>) => {
+    setLoadingStates(prev => ({...prev, economics: true}));
+    setAnalysis(prev => ({...prev, unitEconomics: null}));
+    try {
+        const result = await actions.runUnitEconomics(values);
+        if(result) {
+            setAnalysis(prev => ({...prev, unitEconomics: result}));
+        } else {
+            throw new Error('Unit economics simulation failed.');
+        }
+    } catch(error) {
+         toast({
+            variant: 'destructive',
+            title: `Unit Economics Failed`,
+            description: `Could not run simulation.`,
+        });
+    } finally {
+        setLoadingStates(prev => ({...prev, economics: false}));
+    }
+  }
   
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -298,14 +324,12 @@ export default function DashboardPage() {
           </Card>
 
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 md:grid-cols-7 h-auto">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-auto">
               <TabsTrigger value="insights"><Lightbulb className="mr-2"/>LLM Insight Analysis</TabsTrigger>
               <TabsTrigger value="validation"><AlertTriangle className="mr-2"/>Validation and Risks</TabsTrigger>
               <TabsTrigger value="trl"><ClipboardCheck className="mr-2"/>TRL Breakdown</TabsTrigger>
               <TabsTrigger value="roadmap"><GanttChartSquare className="mr-2"/>R&D Pipeline</TabsTrigger>
-              <TabsTrigger value="market"><Search className="mr-2"/>Market Analysis</TabsTrigger>
-              <TabsTrigger value="ip"><Book className="mr-2"/>IP Analysis</TabsTrigger>
-              <TabsTrigger value="regulatory"><Scale className="mr-2"/>Regulatory Pathway</TabsTrigger>
+              <TabsTrigger value="economics"><DollarSign className="mr-2"/>Unit Economics</TabsTrigger>
             </TabsList>
             
             <TabsContent value="insights">
@@ -400,27 +424,78 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </TabsContent>
-             <TabsContent value="market">
+             <TabsContent value="economics">
                 <Card>
-                    <CardHeader><CardTitle>Market Analysis</CardTitle><CardDescription>AI-generated market analysis based on the technical documentation.</CardDescription></CardHeader>
+                    <CardHeader>
+                        <CardTitle>Unit Economics Simulation</CardTitle>
+                        <CardDescription>Enter scale parameters to simulate economic performance.</CardDescription>
+                    </CardHeader>
                     <CardContent>
-                       {renderContent(analysis.market, loadingStates.market, 'market analysis')}
-                    </CardContent>
-                </Card>
-            </TabsContent>
-            <TabsContent value="ip">
-                 <Card>
-                    <CardHeader><CardTitle>IP Analysis</CardTitle><CardDescription>AI-generated analysis of potential intellectual property and patentable ideas.</CardDescription></CardHeader>
-                    <CardContent>
-                       {renderContent(analysis.ip, loadingStates.ip, 'IP analysis')}
-                    </CardContent>
-                </Card>
-            </TabsContent>
-            <TabsContent value="regulatory">
-                 <Card>
-                    <CardHeader><CardTitle>Regulatory Pathway</CardTitle><CardDescription>AI-generated outline of the potential regulatory pathway for the technology.</CardDescription></CardHeader>
-                    <CardContent>
-                       {renderContent(analysis.regulatory, loadingStates.regulatory, 'regulatory pathway analysis')}
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onEconomicsSubmit)} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                                <FormField
+                                    control={form.control}
+                                    name="production_scale"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Production Scale</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" placeholder="e.g., 1000" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="cost_per_unit"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Cost Per Unit ($)</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" placeholder="e.g., 50" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="revenue_per_unit"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Revenue Per Unit ($)</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" placeholder="e.g., 75" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <Button type="submit" disabled={loadingStates.economics} className="w-full md:w-auto">
+                                    {loadingStates.economics ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4"/>}
+                                    Simulate
+                                </Button>
+                            </form>
+                        </Form>
+
+                        {loadingStates.economics && <Skeleton className="h-24 w-full mt-6" />}
+                        {analysis.unitEconomics && (
+                            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <Card>
+                                    <CardHeader><CardTitle>Unit Cost</CardTitle></CardHeader>
+                                    <CardContent className="text-2xl font-bold">${analysis.unitEconomics.unit_cost}</CardContent>
+                                </Card>
+                                 <Card>
+                                    <CardHeader><CardTitle>ROI</CardTitle></CardHeader>
+                                    <CardContent className="text-2xl font-bold text-green-600">{analysis.unitEconomics.roi}</CardContent>
+                                </Card>
+                                 <Card>
+                                    <CardHeader><CardTitle>Payback Period</CardTitle></CardHeader>
+                                    <CardContent className="text-2xl font-bold">{analysis.unitEconomics.payback_period}</CardContent>
+                                </Card>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </TabsContent>

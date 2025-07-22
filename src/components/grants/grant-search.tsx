@@ -20,41 +20,21 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Loader2, Building, DollarSign, Calendar } from 'lucide-react';
+import { Search, Loader2, Building, DollarSign, Calendar, ExternalLink } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import * as actions from '@/app/actions';
+import { SearchGrantsOutput } from '@/ai/flows/search-grants';
+import { useToast } from '@/hooks/use-toast';
 
 const searchSchema = z.object({
   query: z.string().min(1, 'Query is required'),
 });
 
-const mockGrants = [
-  {
-    id: 'GRT001',
-    title: 'Advanced Bioreactor Design for Cellular Agriculture',
-    agency: 'National Science Foundation',
-    amount: 500000,
-    deadline: '2024-12-15',
-  },
-  {
-    id: 'GRT002',
-    title: 'Sustainable Bioprocessing Innovations',
-    agency: 'Department of Energy',
-    amount: 750000,
-    deadline: '2025-01-31',
-  },
-  {
-    id: 'GRT003',
-    title: 'Early-Stage Research in Synthetic Biology',
-    agency: 'National Institutes of Health',
-    amount: 250000,
-    deadline: '2024-11-30',
-  },
-];
-
-type Grant = typeof mockGrants[0];
 
 export function GrantSearch() {
   const [isSearching, setIsSearching] = useState(false);
-  const [results, setResults] = useState<Grant[]>([]);
+  const [results, setResults] = useState<SearchGrantsOutput>([]);
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof searchSchema>>({
     resolver: zodResolver(searchSchema),
@@ -63,9 +43,22 @@ export function GrantSearch() {
 
   const onSubmit = async (values: z.infer<typeof searchSchema>) => {
     setIsSearching(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setResults(mockGrants.filter(g => g.title.toLowerCase().includes(values.query.toLowerCase())));
+    setResults([]);
+    try {
+        const keywords = values.query.split(',').map(k => k.trim()).filter(k => k);
+        const searchResult = await actions.findGrants({ keywords });
+        if (searchResult) {
+            setResults(searchResult);
+        } else {
+             throw new Error('No results found.');
+        }
+    } catch(error) {
+        toast({
+            variant: 'destructive',
+            title: 'Search Failed',
+            description: 'Could not perform the grant search.',
+        });
+    }
     setIsSearching(false);
   };
 
@@ -77,7 +70,7 @@ export function GrantSearch() {
           Search for Grants
         </CardTitle>
         <CardDescription>
-          Search public grant databases using keywords.
+          Search public grant databases using comma-separated keywords.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -104,8 +97,9 @@ export function GrantSearch() {
           <h3 className="text-lg font-semibold">Results</h3>
           {isSearching && (
             <div className="space-y-2">
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
             </div>
           )}
           {!isSearching && results.length === 0 && (
@@ -115,12 +109,15 @@ export function GrantSearch() {
           )}
           {!isSearching && results.length > 0 && (
             <div className="space-y-3">
-              {results.map((grant) => (
-                <div key={grant.id} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <h4 className="font-semibold text-primary">{grant.title}</h4>
+              {results.map((grant, index) => (
+                <div key={index} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <a href={grant.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-semibold text-primary hover:underline">
+                    {grant.title}
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1"><Building className="w-3.5 h-3.5" />{grant.agency}</div>
                   <div className="flex justify-between items-center mt-2 text-sm">
-                    <div className="flex items-center gap-1 font-medium"><DollarSign className="w-3.5 h-3.5" />{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(grant.amount)}</div>
+                    <div className="flex items-center gap-1 font-medium"><DollarSign className="w-3.5 h-3.5" />{grant.funding}</div>
                     <div className="flex items-center gap-1 text-muted-foreground"><Calendar className="w-3.5 h-3.5" />{grant.deadline}</div>
                   </div>
                 </div>

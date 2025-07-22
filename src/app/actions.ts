@@ -22,9 +22,16 @@ import {
   generateGrantProposal, 
   type GenerateGrantProposalInput 
 } from '@/ai/flows/generate-grant-proposal';
-import { analyzeMarket as analyzeMarketFlow, type MarketAnalysisInput } from '@/ai/flows/analyze-market';
-import { analyzeIp as analyzeIpFlow, type IpAnalysisInput } from '@/ai/flows/analyze-ip';
-import { analyzeRegulatory as analyzeRegulatoryFlow, type RegulatoryAnalysisInput } from '@/ai/flows/analyze-regulatory';
+import { 
+  searchGrants,
+  type SearchGrantsInput,
+  type SearchGrantsOutput
+} from '@/ai/flows/search-grants';
+import {
+  simulateUnitEconomics,
+  type SimulateUnitEconomicsInput,
+  type SimulateUnitEconomicsOutput,
+} from '@/ai/flows/simulate-unit-economics';
 import { extractTextFromDocument as extractTextFromDocumentFlow, type ExtractTextFromDocumentInput } from '@/ai/flows/extract-text-from-document';
 
 
@@ -73,32 +80,24 @@ export async function createGrantProposal(input: GenerateGrantProposalInput) {
     }
 }
 
-export async function analyzeMarket(input: MarketAnalysisInput) {
+export async function findGrants(input: SearchGrantsInput): Promise<SearchGrantsOutput | null> {
     try {
-        return await analyzeMarketFlow(input);
+        return await searchGrants(input);
     } catch(e) {
         console.error(e);
         return null;
     }
 }
 
-export async function analyzeIp(input: IpAnalysisInput) {
+export async function runUnitEconomics(input: SimulateUnitEconomicsInput): Promise<SimulateUnitEconomicsOutput | null> {
     try {
-        return await analyzeIpFlow(input);
+        return await simulateUnitEconomics(input);
     } catch(e) {
         console.error(e);
         return null;
     }
 }
 
-export async function analyzeRegulatory(input: RegulatoryAnalysisInput) {
-    try {
-        return await analyzeRegulatoryFlow(input);
-    } catch(e) {
-        console.error(e);
-        return null;
-    }
-}
 
 export async function extractText(input: ExtractTextFromDocumentInput) {
   try {

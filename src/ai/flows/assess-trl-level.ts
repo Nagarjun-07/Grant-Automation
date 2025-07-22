@@ -39,7 +39,13 @@ const prompt = ai.definePrompt({
 
   Based on the provided technical documentation, identify the key components of the bioreactor system. For each component, determine the TRL level (1-9), provide a justification for your assessment, and include a timestamp in 'YYYY-MM-DD HH:MM:SS Z' format.
 
-  Return the output as a JSON object where each key is a component name and the value is an object containing the TRL, justification, and timestamp.
+  Return ONLY a valid JSON object where each key is a component name and the value is an object containing the TRL, justification, and timestamp. Do not include any other text or formatting.
+
+  Example Output:
+  {
+    "sensor": {"trl": 4, "justification": "Lab validated", "timestamp": "2025-07-22 13:34:00 IST"},
+    "pump": {"trl": 3, "justification": "Proof of concept", "timestamp": "2025-07-22 13:34:00 IST"}
+  }
 
   Technical Documentation: {{{technicalDocumentation}}}
   `,
