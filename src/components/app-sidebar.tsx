@@ -61,34 +61,6 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
-         <Popover>
-            <PopoverTrigger asChild>
-                <Button variant="ghost" className="justify-start w-full gap-2 p-2 h-auto">
-                    <Avatar className="h-8 w-8">
-                        <AvatarImage src="https://placehold.co/40x40" alt="User" />
-                        <AvatarFallback>U</AvatarFallback>
-                    </Avatar>
-                    <div className="text-left">
-                        <p className="text-sm font-medium">Demo User</p>
-                        <p className="text-xs text-muted-foreground">user@example.com</p>
-                    </div>
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-56 p-2 mb-2" align="start">
-                <div className="space-y-1">
-                    <Button variant="ghost" size="sm" className="w-full justify-start gap-2 px-2">
-                        <UserCircle /> Profile
-                    </Button>
-                    <Button variant="ghost" size="sm" className="w-full justify-start gap-2 px-2">
-                        <Settings /> Settings
-                    </Button>
-                    <Separator />
-                     <Button variant="ghost" size="sm" className="w-full justify-start gap-2 px-2 text-destructive hover:text-destructive">
-                        <LogOut /> Log out
-                    </Button>
-                </div>
-            </PopoverContent>
-         </Popover>
       </SidebarFooter>
     </Sidebar>
   );
