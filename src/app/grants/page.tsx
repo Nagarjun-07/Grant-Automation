@@ -11,8 +11,12 @@ export default function GrantsPage() {
                 </p>
             </header>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                <GrantSearch />
-                <GrantProposalGenerator />
+                <div className="lg:col-span-2">
+                  <GrantSearch />
+                </div>
+                <div className="lg:col-span-2">
+                  <GrantProposalGenerator />
+                </div>
             </div>
         </div>
     );

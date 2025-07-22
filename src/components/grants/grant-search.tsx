@@ -47,10 +47,13 @@ export function GrantSearch() {
     try {
         const keywords = values.query.split(',').map(k => k.trim()).filter(k => k);
         const searchResult = await actions.findGrants({ keywords });
-        if (searchResult) {
+        if (searchResult && searchResult.length > 0) {
             setResults(searchResult);
         } else {
-             throw new Error('No results found.');
+             toast({
+                title: 'No Results',
+                description: 'Your search did not return any grants. Try different keywords.',
+            });
         }
     } catch(error) {
         toast({
@@ -90,6 +93,7 @@ export function GrantSearch() {
             />
             <Button type="submit" disabled={isSearching}>
               {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+              <span className="sr-only">Search</span>
             </Button>
           </form>
         </Form>

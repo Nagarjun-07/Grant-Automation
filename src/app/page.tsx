@@ -40,6 +40,7 @@ import { RandDPipelineOutput } from '@/ai/flows/generate-r-and-d-roadmap';
 import { SimulateUnitEconomicsOutput } from '@/ai/flows/simulate-unit-economics';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { GrantSearch } from '@/components/grants/grant-search';
 
 
 const SAMPLE_TECHNICAL_DOCUMENTATION = `The BR-X10 is a novel stirred-tank bioreactor designed for mammalian cell culture. It features a 10L working volume with a borosilicate glass vessel. The system incorporates a magnetic-drive agitation system with a pitched-blade impeller, ensuring low-shear mixing. Key components include the agitation system, vessel, and headplate. Advanced process control is achieved via a dedicated PLC with a user-friendly HMI. Sensors for pH (range 6.0-8.0), dissolved oxygen (DO, 0-100% saturation), and temperature (25-45°C) are integrated. The sparging system uses a microporous sparger for efficient oxygen transfer. The system is designed for batch, fed-batch, and perfusion processes. Sterilization is performed via autoclaving. The headplate includes multiple ports for media addition, sampling, and sensor integration. A peristaltic pump is used for media transfer.`;
@@ -120,7 +121,7 @@ export default function DashboardPage() {
 
   const handleTabChange = async (tab: string) => {
     setActiveTab(tab);
-    if (!docText && !['economics'].includes(tab)) return;
+    if (!docText && !['economics', 'grants'].includes(tab)) return;
 
     switch(tab) {
         case 'insights':
@@ -148,6 +149,9 @@ export default function DashboardPage() {
             break;
         case 'economics':
              // Handled by form submission
+            break;
+        case 'grants':
+            // Standalone component, no initial analysis needed here.
             break;
     }
   };
@@ -324,12 +328,13 @@ export default function DashboardPage() {
           </Card>
 
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-auto">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 h-auto">
               <TabsTrigger value="insights"><Lightbulb className="mr-2"/>LLM Insight Analysis</TabsTrigger>
               <TabsTrigger value="validation"><AlertTriangle className="mr-2"/>Validation and Risks</TabsTrigger>
               <TabsTrigger value="trl"><ClipboardCheck className="mr-2"/>TRL Breakdown</TabsTrigger>
               <TabsTrigger value="roadmap"><GanttChartSquare className="mr-2"/>R&D Pipeline</TabsTrigger>
               <TabsTrigger value="economics"><DollarSign className="mr-2"/>Unit Economics</TabsTrigger>
+              <TabsTrigger value="grants"><Search className="mr-2"/>Grant Search</TabsTrigger>
             </TabsList>
             
             <TabsContent value="insights">
@@ -498,6 +503,9 @@ export default function DashboardPage() {
                         )}
                     </CardContent>
                 </Card>
+            </TabsContent>
+            <TabsContent value="grants">
+                <GrantSearch />
             </TabsContent>
           </Tabs>
         </div>
