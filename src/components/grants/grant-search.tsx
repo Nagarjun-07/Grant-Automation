@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Loader2, Building, DollarSign, Calendar, ExternalLink } from 'lucide-react';
+import { Search, Loader2, DollarSign, ExternalLink } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import * as actions from '@/app/actions';
 import { SearchGrantsOutput } from '@/ai/flows/search-grants';
@@ -115,11 +115,7 @@ export function GrantSearch() {
                     {grant.title}
                     <ExternalLink className="w-4 h-4" />
                   </a>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1"><Building className="w-3.5 h-3.5" />{grant.agency}</div>
-                  <div className="flex justify-between items-center mt-2 text-sm">
-                    <div className="flex items-center gap-1 font-medium"><DollarSign className="w-3.5 h-3.5" />{grant.funding}</div>
-                    <div className="flex items-center gap-1 text-muted-foreground"><Calendar className="w-3.5 h-3.5" />{grant.deadline}</div>
-                  </div>
+                  <div className="flex items-center gap-1 text-sm font-medium mt-2"><DollarSign className="w-3.5 h-3.5" />{grant.funding}</div>
                 </div>
               ))}
             </div>

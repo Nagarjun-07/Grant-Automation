@@ -21,8 +21,6 @@ const SearchGrantsOutputSchema = z.array(
         title: z.string().describe('The title of the grant.'),
         url: z.string().url().describe('The URL to the grant details page.'),
         funding: z.string().describe('The funding amount or range.'),
-        agency: z.string().describe('The agency providing the grant.'),
-        deadline: z.string().describe('The application deadline in YYYY-MM-DD format.'),
     })
 );
 export type SearchGrantsOutput = z.infer<typeof SearchGrantsOutputSchema>;
@@ -39,7 +37,7 @@ const prompt = ai.definePrompt({
   output: {schema: SearchGrantsOutputSchema},
   prompt: `You are a grant search expert. Find 3-5 relevant public grants from government databases (like grants.gov) based on the following keywords.
   
-  For each grant, provide the title, a URL, the funding amount, the responsible agency, and the deadline.
+  For each grant, provide the title, a URL, and the funding amount.
   
   Keywords: {{{keywords}}}
   
