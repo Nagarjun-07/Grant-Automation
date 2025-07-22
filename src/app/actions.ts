@@ -4,15 +4,19 @@ import {
   summarizeTechnicalDocumentation,
 } from '@/ai/flows/summarize-technical-documentation';
 import {
-  generateExperimentalValidation,
+  getValidationAndRisks,
+  type ValidationAndRisksInput,
+  type ValidationAndRisksOutput,
 } from '@/ai/flows/generate-experimental-validation';
 import {
-  assessTRLLevel,
-  type TRLAssessmentInput,
+  getTRLBreakdown,
+  type TRLBreakdownInput,
+  type TRLBreakdownOutput,
 } from '@/ai/flows/assess-trl-level';
 import {
-  generateRandDRoadmap,
-  type GenerateRandDRoadmapInput,
+  getRandDPipeline,
+  type RandDPipelineInput,
+  type RandDPipelineOutput,
 } from '@/ai/flows/generate-r-and-d-roadmap';
 import { 
   generateGrantProposal, 
@@ -33,27 +37,27 @@ export async function summarize(input: { documentText: string }) {
   }
 }
 
-export async function validate(input: { technicalDocumentation: string }) {
+export async function validationAndRisks(input: ValidationAndRisksInput): Promise<ValidationAndRisksOutput | null> {
   try {
-    return await generateExperimentalValidation(input);
+    return await getValidationAndRisks(input);
   } catch (e) {
     console.error(e);
     return null;
   }
 }
 
-export async function assessTrl(input: TRLAssessmentInput) {
+export async function trlBreakdown(input: TRLBreakdownInput): Promise<TRLBreakdownOutput | null> {
   try {
-    return await assessTRLLevel(input);
+    return await getTRLBreakdown(input);
   } catch (e) {
     console.error(e);
     return null;
   }
 }
 
-export async function generateRoadmap(input: GenerateRandDRoadmapInput) {
+export async function randDPipeline(input: RandDPipelineInput): Promise<RandDPipelineOutput | null> {
   try {
-    return await generateRandDRoadmap(input);
+    return await getRandDPipeline(input);
   } catch (e) {
     console.error(e);
     return null;

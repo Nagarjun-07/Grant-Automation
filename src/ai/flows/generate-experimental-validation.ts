@@ -3,60 +3,59 @@
 /**
  * @fileOverview Generates experimental validations and identifies potential risks in bioreactor technical documentation.
  *
- * - generateExperimentalValidation - A function that handles the generation of experimental validations and risk identification.
- * - ExperimentalValidationInput - The input type for the generateExperimentalValidation function.
- * - ExperimentalValidationOutput - The return type for the generateExperimentalValidation function.
+ * - getValidationAndRisks - A function that handles the generation of experimental validations and risk identification.
+ * - ValidationAndRisksInput - The input type for the getValidationAndRisks function.
+ * - ValidationAndRisksOutput - The return type for the getValidationAndRisks function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const ExperimentalValidationInputSchema = z.object({
+const ValidationAndRisksInputSchema = z.object({
   technicalDocumentation: z
     .string()
     .describe('Technical documentation of the bioreactor.'),
 });
-export type ExperimentalValidationInput = z.infer<
-  typeof ExperimentalValidationInputSchema
+export type ValidationAndRisksInput = z.infer<
+  typeof ValidationAndRisksInputSchema
 >;
 
-const ExperimentalValidationOutputSchema = z.object({
-  validationSuggestions: z
-    .string()
+const ValidationAndRisksOutputSchema = z.object({
+  experimental_suggestions: z
+    .array(z.string())
     .describe('Suggested experimental validations for the bioreactor.'),
-  riskAnalysis: z
-    .string()
+  risk_list: z
+    .array(z.string())
     .describe('Potential risks identified in the technical documentation.'),
 });
-export type ExperimentalValidationOutput = z.infer<
-  typeof ExperimentalValidationOutputSchema
+export type ValidationAndRisksOutput = z.infer<
+  typeof ValidationAndRisksOutputSchema
 >;
 
-export async function generateExperimentalValidation(
-  input: ExperimentalValidationInput
-): Promise<ExperimentalValidationOutput> {
-  return generateExperimentalValidationFlow(input);
+export async function getValidationAndRisks(
+  input: ValidationAndRisksInput
+): Promise<ValidationAndRisksOutput> {
+  return getValidationAndRisksFlow(input);
 }
 
 const prompt = ai.definePrompt({
-  name: 'experimentalValidationPrompt',
-  input: {schema: ExperimentalValidationInputSchema},
-  output: {schema: ExperimentalValidationOutputSchema},
+  name: 'validationAndRisksPrompt',
+  input: {schema: ValidationAndRisksInputSchema},
+  output: {schema: ValidationAndRisksOutputSchema},
   prompt: `You are an expert in bioreactor technology and experimental validation.
 
   Based on the following technical documentation, suggest experimental validations and identify potential risks.
 
   Technical Documentation: {{{technicalDocumentation}}}
 
-  Validation Suggestions: [suggestions]
-  Risk Analysis: [risks]`,
+  Return a JSON object with two keys: "experimental_suggestions" (a list of strings) and "risk_list" (a list of strings).`,
 });
 
-const generateExperimentalValidationFlow = ai.defineFlow(
+const getValidationAndRisksFlow = ai.defineFlow(
   {
-    name: 'generateExperimentalValidationFlow',
-    inputSchema: ExperimentalValidationInputSchema,
-    outputSchema: ExperimentalValidationOutputSchema,
+    name: 'getValidationAndRisksFlow',
+    inputSchema: ValidationAndRisksInputSchema,
+    outputSchema: ValidationAndRisksOutputSchema,
   },
   async input => {
     const {output} = await prompt(input);

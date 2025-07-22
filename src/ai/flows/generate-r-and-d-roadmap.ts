@@ -2,52 +2,52 @@
 /**
  * @fileOverview Generates an R&D roadmap for the bioreactor system, outlining key phases from lab to deployment.
  *
- * - generateRandDRoadmap - A function that handles the R&D roadmap generation process.
- * - GenerateRandDRoadmapInput - The input type for the generateRandDRoadmap function.
- * - GenerateRandDRoadmapOutput - The return type for the generateRandDRoadmap function.
+ * - getRandDPipeline - A function that handles the R&D roadmap generation process.
+ * - RandDPipelineInput - The input type for the getRandDPipeline function.
+ * - RandDPipelineOutput - The return type for the getRandDPipeline function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const GenerateRandDRoadmapInputSchema = z.object({
+const RandDPipelineInputSchema = z.object({
   technicalDocumentation: z
     .string()
     .describe('Technical documentation of the bioreactor system.'),
-  productionScale: z.string().optional().describe('The production scale of the bioreactor system (e.g., lab scale, pilot scale, industrial scale).'),
-  costPerUnit: z.string().optional().describe('The estimated cost per unit of production.'),
-  revenuePerUnit: z.string().optional().describe('The estimated revenue per unit of production.'),
 });
-export type GenerateRandDRoadmapInput = z.infer<typeof GenerateRandDRoadmapInputSchema>;
+export type RandDPipelineInput = z.infer<typeof RandDPipelineInputSchema>;
 
-const GenerateRandDRoadmapOutputSchema = z.object({
-  roadmap: z.string().describe('The R&D roadmap for the bioreactor system, outlining key phases from lab to deployment.'),
+const RandDPipelineOutputSchema = z.object({
+  phases: z.array(z.object({
+    phase: z.string().describe("Name of the R&D phase."),
+    start_date: z.string().describe("Start date of the phase in YYYY-MM-DD format."),
+    end_date: z.string().describe("End date of the phase in YYYY-MM-DD format."),
+    description: z.string().describe("Description of the activities in this phase."),
+  })).describe("The R&D roadmap phases.")
 });
-export type GenerateRandDRoadmapOutput = z.infer<typeof GenerateRandDRoadmapOutputSchema>;
+export type RandDPipelineOutput = z.infer<typeof RandDPipelineOutputSchema>;
 
-export async function generateRandDRoadmap(input: GenerateRandDRoadmapInput): Promise<GenerateRandDRoadmapOutput> {
-  return generateRandDRoadmapFlow(input);
+export async function getRandDPipeline(input: RandDPipelineInput): Promise<RandDPipelineOutput> {
+  return getRandDPipelineFlow(input);
 }
 
 const prompt = ai.definePrompt({
-  name: 'generateRandDRoadmapPrompt',
-  input: {schema: GenerateRandDRoadmapInputSchema},
-  output: {schema: GenerateRandDRoadmapOutputSchema},
-  prompt: `You are an expert in bioreactor technology and R&D planning. Based on the technical documentation provided, create an R&D roadmap outlining the key phases from lab to deployment. Consider the production scale, cost per unit, and revenue per unit if provided. Be very detailed in the roadmap.
+  name: 'getRandDPipelinePrompt',
+  input: {schema: RandDPipelineInputSchema},
+  output: {schema: RandDPipelineOutputSchema},
+  prompt: `You are an expert in bioreactor technology and R&D planning. Based on the technical documentation provided, create an R&D roadmap. 
+  
+  The roadmap should be a JSON object containing a "phases" array. Each object in the array should represent a key phase from lab to deployment and include "phase", "start_date", "end_date", and "description" fields. Be realistic with timelines.
 
 Technical Documentation: {{{technicalDocumentation}}}
-Production Scale: {{{productionScale}}}
-Cost per Unit: {{{costPerUnit}}}
-Revenue per Unit: {{{revenuePerUnit}}}
-
-R&D Roadmap:`,
+`,
 });
 
-const generateRandDRoadmapFlow = ai.defineFlow(
+const getRandDPipelineFlow = ai.defineFlow(
   {
-    name: 'generateRandDRoadmapFlow',
-    inputSchema: GenerateRandDRoadmapInputSchema,
-    outputSchema: GenerateRandDRoadmapOutputSchema,
+    name: 'getRandDPipelineFlow',
+    inputSchema: RandDPipelineInputSchema,
+    outputSchema: RandDPipelineOutputSchema,
   },
   async input => {
     const {output} = await prompt(input);

@@ -1,26 +1,19 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import {
   FileText,
-  Beaker,
-  ClipboardCheck,
-  Route,
   UploadCloud,
   Loader2,
   Lightbulb,
   AlertTriangle,
-  DollarSign,
   ChevronRight,
   Sparkles,
   Search,
   Book,
   Scale,
   GanttChartSquare,
-  ClipboardList,
+  ClipboardCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -35,40 +28,24 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import * as actions from './actions';
+import { ValidationAndRisksOutput } from '@/ai/flows/generate-experimental-validation';
+import { TRLBreakdownOutput } from '@/ai/flows/assess-trl-level';
+import { RandDPipelineOutput } from '@/ai/flows/generate-r-and-d-roadmap';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-const SAMPLE_TECHNICAL_DOCUMENTATION = `The BR-X10 is a novel stirred-tank bioreactor designed for mammalian cell culture. It features a 10L working volume with a borosilicate glass vessel. The system incorporates a magnetic-drive agitation system with a pitched-blade impeller, ensuring low-shear mixing. Key components include the agitation system, vessel, and headplate. Advanced process control is achieved via a dedicated PLC with a user-friendly HMI. Sensors for pH (range 6.0-8.0), dissolved oxygen (DO, 0-100% saturation), and temperature (25-45°C) are integrated. The sparging system uses a microporous sparger for efficient oxygen transfer. The system is designed for batch, fed-batch, and perfusion processes. Sterilization is performed via autoclaving. The headplate includes multiple ports for media addition, sampling, and sensor integration.`;
+const SAMPLE_TECHNICAL_DOCUMENTATION = `The BR-X10 is a novel stirred-tank bioreactor designed for mammalian cell culture. It features a 10L working volume with a borosilicate glass vessel. The system incorporates a magnetic-drive agitation system with a pitched-blade impeller, ensuring low-shear mixing. Key components include the agitation system, vessel, and headplate. Advanced process control is achieved via a dedicated PLC with a user-friendly HMI. Sensors for pH (range 6.0-8.0), dissolved oxygen (DO, 0-100% saturation), and temperature (25-45°C) are integrated. The sparging system uses a microporous sparger for efficient oxygen transfer. The system is designed for batch, fed-batch, and perfusion processes. Sterilization is performed via autoclaving. The headplate includes multiple ports for media addition, sampling, and sensor integration. A peristaltic pump is used for media transfer.`;
 
 type AnalysisState = {
   summary: string | null;
-  validation: { validationSuggestions: string; riskAnalysis: string } | null;
-  trl: { trlLevel: number; justification: string } | null;
-  roadmap: string | null;
+  validationAndRisks: ValidationAndRisksOutput | null;
+  trlBreakdown: TRLBreakdownOutput | null;
+  randDPipeline: RandDPipelineOutput | null;
   market: string | null;
   ip: string | null;
   regulatory: string | null;
 };
-
-const TRLFormSchema = z.object({
-  componentDescription: z.string().min(10, {
-    message: 'Component description must be at least 10 characters.',
-  }),
-});
-
-const RoadmapFormSchema = z.object({
-  productionScale: z.string().optional(),
-  costPerUnit: z.string().optional(),
-  revenuePerUnit: z.string().optional(),
-});
 
 export default function DashboardPage() {
   const [docText, setDocText] = useState<string>('');
@@ -76,9 +53,9 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState('insights');
   const [analysis, setAnalysis] = useState<AnalysisState>({
     summary: null,
-    validation: null,
-    trl: null,
-    roadmap: null,
+    validationAndRisks: null,
+    trlBreakdown: null,
+    randDPipeline: null,
     market: null,
     ip: null,
     regulatory: null,
@@ -91,33 +68,19 @@ export default function DashboardPage() {
     market: false,
     ip: false,
     regulatory: false,
+    validation: false,
   });
 
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const trlForm = useForm<z.infer<typeof TRLFormSchema>>({
-    resolver: zodResolver(TRLFormSchema),
-    defaultValues: { componentDescription: '' },
-  });
-
-  const roadmapForm = useForm<z.infer<typeof RoadmapFormSchema>>({
-    resolver: zodResolver(RoadmapFormSchema),
-    defaultValues: {
-      productionScale: 'Pilot Scale',
-      costPerUnit: '150',
-      revenuePerUnit: '500',
-    },
-  });
-
   const handleProcessDocument = async (text: string) => {
     setDocText(text);
-    setAnalysis({ summary: null, validation: null, trl: null, roadmap: null, market: null, ip: null, regulatory: null });
-    trlForm.reset();
+    setAnalysis({ summary: null, validationAndRisks: null, trlBreakdown: null, randDPipeline: null, market: null, ip: null, regulatory: null });
     setActiveTab('insights');
   };
 
-  const runAnalysis = async (tab: string, analysisFn: () => Promise<any>, stateKey: keyof AnalysisState) => {
+  const runAnalysis = async <K extends keyof AnalysisState>(tab: string, analysisFn: () => Promise<Partial<AnalysisState> | null>, stateKey: K) => {
     setLoadingStates(prev => ({...prev, [tab]: true}));
     setAnalysis(prev => ({...prev, [stateKey]: null}));
     try {
@@ -146,20 +109,24 @@ export default function DashboardPage() {
         case 'insights':
             if (!analysis.summary) {
                 runAnalysis('insights', async () => {
-                    const [summaryRes, validationRes] = await Promise.all([
-                        actions.summarize({ documentText: docText }),
-                        actions.validate({ technicalDocumentation: docText }),
-                    ]);
-                    return { summary: summaryRes?.summary, validation: validationRes };
-                }, 'summary'); // This is a bit of a hack, we're setting two state keys
+                    const summaryRes = await actions.summarize({ documentText: docText });
+                    return { summary: summaryRes?.summary };
+                }, 'summary');
+            }
+            break;
+        case 'validation':
+            if (!analysis.validationAndRisks) {
+                runAnalysis('validation', async () => ({ validationAndRisks: await actions.validationAndRisks({ technicalDocumentation: docText }) }), 'validationAndRisks');
             }
             break;
         case 'trl':
-            // TRL needs form input, so we don't auto-run
+            if (!analysis.trlBreakdown) {
+                 runAnalysis('trl', async () => ({ trlBreakdown: await actions.trlBreakdown({ technicalDocumentation: docText }) }), 'trlBreakdown');
+            }
             break;
         case 'roadmap':
-            if(!analysis.roadmap) {
-                roadmapForm.handleSubmit(onGenerateRoadmap)();
+            if(!analysis.randDPipeline) {
+                 runAnalysis('roadmap', async () => ({ randDPipeline: await actions.randDPipeline({ technicalDocumentation: docText }) }), 'randDPipeline');
             }
             break;
         case 'market':
@@ -178,20 +145,6 @@ export default function DashboardPage() {
             }
             break;
     }
-  };
-  
-  const onAssessTrl = async (values: z.infer<typeof TRLFormSchema>) => {
-    runAnalysis('trl', async () => {
-        const res = await actions.assessTrl({ componentDescription: values.componentDescription, technicalData: docText });
-        return { trl: res ? { trlLevel: res.trlLevel, justification: res.justification } : null };
-    }, 'trl');
-  };
-
-  const onGenerateRoadmap = async (values: z.infer<typeof RoadmapFormSchema>) => {
-    runAnalysis('roadmap', async () => {
-        const res = await actions.generateRoadmap({ technicalDocumentation: docText, ...values });
-        return { roadmap: res?.roadmap };
-    }, 'roadmap');
   };
   
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -269,7 +222,7 @@ export default function DashboardPage() {
                         <>
                             <UploadCloud className="w-12 h-12 text-muted-foreground mb-4" />
                             <h3 className="text-lg font-medium text-foreground">Click to upload a file</h3>
-                            <p className="text-sm text-muted-foreground">PDF, PNG, JPG, TXT, or MD files</p>
+                            <p className="text-sm text-muted-foreground">PDF, PNG, JPG files</p>
                             <Button variant="outline" className="mt-4" onClick={() => fileInputRef.current?.click()}>
                                 Browse Files
                             </Button>
@@ -278,7 +231,7 @@ export default function DashboardPage() {
                                 ref={fileInputRef}
                                 className="hidden"
                                 onChange={handleFileChange}
-                                accept=".pdf,.png,.jpg,.jpeg,.txt,.md"
+                                accept=".pdf,.png,.jpg,.jpeg"
                             />
                         </>
                     )}
@@ -345,10 +298,11 @@ export default function DashboardPage() {
           </Card>
 
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 h-auto">
+            <TabsList className="grid w-full grid-cols-3 md:grid-cols-7 h-auto">
               <TabsTrigger value="insights"><Lightbulb className="mr-2"/>LLM Insight Analysis</TabsTrigger>
+              <TabsTrigger value="validation"><AlertTriangle className="mr-2"/>Validation and Risks</TabsTrigger>
               <TabsTrigger value="trl"><ClipboardCheck className="mr-2"/>TRL Breakdown</TabsTrigger>
-              <TabsTrigger value="roadmap"><GanttChartSquare className="mr-2"/>R&D Roadmap</TabsTrigger>
+              <TabsTrigger value="roadmap"><GanttChartSquare className="mr-2"/>R&D Pipeline</TabsTrigger>
               <TabsTrigger value="market"><Search className="mr-2"/>Market Analysis</TabsTrigger>
               <TabsTrigger value="ip"><Book className="mr-2"/>IP Analysis</TabsTrigger>
               <TabsTrigger value="regulatory"><Scale className="mr-2"/>Regulatory Pathway</TabsTrigger>
@@ -358,27 +312,28 @@ export default function DashboardPage() {
                 <Card>
                     <CardHeader><CardTitle>LLM Insight Analysis</CardTitle></CardHeader>
                     <CardContent>
-                      {loadingStates.insights ? <Skeleton className="h-48 w-full" /> : 
-                        !analysis.summary && !analysis.validation ? <p className="text-sm text-muted-foreground mt-4">No insights generated yet.</p> :
+                      {renderContent(analysis.summary, loadingStates.insights, 'summary')}
+                    </CardContent>
+                </Card>
+            </TabsContent>
+            <TabsContent value="validation">
+                <Card>
+                    <CardHeader><CardTitle>Validation and Risks</CardTitle></CardHeader>
+                    <CardContent>
+                      {loadingStates.validation ? <Skeleton className="h-48 w-full" /> : 
+                        !analysis.validationAndRisks ? <p className="text-sm text-muted-foreground mt-4">No validation and risks generated yet.</p> :
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                             <div>
-                                <h3 className="font-semibold text-lg flex items-center gap-2 mb-2"><Lightbulb className="text-primary" />AI Summary</h3>
-                                {renderContent(analysis.summary, false, 'summary')}
+                                <h3 className="font-semibold text-lg flex items-center gap-2 mb-2"><Sparkles className="w-4 h-4 text-accent" />Experimental Suggestions</h3>
+                                <ul className="list-disc pl-5 text-sm space-y-1">
+                                    {analysis.validationAndRisks.experimental_suggestions.map((item, index) => <li key={index}>{item}</li>)}
+                                </ul>
                             </div>
                             <div>
-                                <h3 className="font-semibold text-lg mb-2">Validation & Risks</h3>
-                                {analysis.validation ? (
-                                    <div className="space-y-4">
-                                        <div>
-                                            <h4 className="font-semibold flex items-center gap-2 mb-2"><AlertTriangle className="w-4 h-4 text-destructive" />Risk Analysis</h4>
-                                            <div className="text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: analysis.validation.riskAnalysis.replace(/\n/g, '<br />')}} />
-                                        </div>
-                                        <div>
-                                            <h4 className="font-semibold flex items-center gap-2 mb-2"><Sparkles className="w-4 h-4 text-accent" />Validation Suggestions</h4>
-                                            <div className="text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: analysis.validation.validationSuggestions.replace(/\n/g, '<br />')}} />
-                                        </div>
-                                    </div>
-                                ) : <p className="text-sm text-muted-foreground">No validation data.</p>}
+                                <h3 className="font-semibold text-lg flex items-center gap-2 mb-2"><AlertTriangle className="w-4 h-4 text-destructive" />Risk List</h3>
+                                <ul className="list-disc pl-5 text-sm space-y-1">
+                                    {analysis.validationAndRisks.risk_list.map((item, index) => <li key={index}>{item}</li>)}
+                                </ul>
                             </div>
                         </div>
                       }
@@ -387,93 +342,61 @@ export default function DashboardPage() {
             </TabsContent>
             <TabsContent value="trl">
                 <Card>
-                    <CardHeader><CardTitle>TRL Breakdown</CardTitle><CardDescription>Assess the Technology Readiness Level of a specific component.</CardDescription></CardHeader>
+                    <CardHeader><CardTitle>TRL Breakdown</CardTitle><CardDescription>Technology Readiness Level assessed for each component.</CardDescription></CardHeader>
                     <CardContent>
-                        <Form {...trlForm}>
-                            <form onSubmit={trlForm.handleSubmit(onAssessTrl)} className="space-y-4">
-                            <FormField
-                                control={trlForm.control}
-                                name="componentDescription"
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Component to Assess</FormLabel>
-                                    <FormControl>
-                                    <Input placeholder="e.g., Magnetic-drive agitation system" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                            <Button type="submit" disabled={loadingStates.trl}>
-                                {loadingStates.trl && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Assess TRL
-                            </Button>
-                            </form>
-                        </Form>
-                        <div className="mt-4">
-                            {loadingStates.trl ? <Skeleton className="h-24 w-full" /> : 
-                                analysis.trl && (
-                                <div className="space-y-2 text-sm bg-muted/50 p-4 rounded-md">
-                                    <p><strong className="font-semibold">TRL Level:</strong> <span className="font-mono text-primary font-bold text-base">{analysis.trl.trlLevel} / 9</span></p>
-                                    <p><strong className="font-semibold">Justification:</strong> {analysis.trl.justification}</p>
-                                </div>
-                                )
-                            }
-                        </div>
+                        {loadingStates.trl ? <Skeleton className="h-48 w-full" /> : 
+                            !analysis.trlBreakdown ? <p className="text-sm text-muted-foreground mt-4">No TRL breakdown generated yet.</p> :
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Component</TableHead>
+                                        <TableHead>TRL</TableHead>
+                                        <TableHead>Justification</TableHead>
+                                        <TableHead>Timestamp</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {Object.entries(analysis.trlBreakdown).map(([component, data]) => (
+                                        <TableRow key={component}>
+                                            <TableCell className="font-medium">{component}</TableCell>
+                                            <TableCell><span className="font-mono text-primary font-bold text-base">{data.trl} / 9</span></TableCell>
+                                            <TableCell>{data.justification}</TableCell>
+                                            <TableCell>{data.timestamp}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        }
                     </CardContent>
                 </Card>
             </TabsContent>
             <TabsContent value="roadmap">
                  <Card>
-                    <CardHeader><CardTitle>R&D Roadmap</CardTitle><CardDescription>Generate an R&D roadmap with economic simulation.</CardDescription></CardHeader>
+                    <CardHeader><CardTitle>R&amp;D Pipeline</CardTitle><CardDescription>Generated R&amp;D pipeline based on your document.</CardDescription></CardHeader>
                     <CardContent>
-                        <Form {...roadmapForm}>
-                            <form onSubmit={roadmapForm.handleSubmit(onGenerateRoadmap)} className="space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <FormField
-                                        control={roadmapForm.control}
-                                        name="productionScale"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Production Scale</FormLabel>
-                                                <FormControl>
-                                                    <Input placeholder="e.g., Pilot Scale" {...field} />
-                                                </FormControl>
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={roadmapForm.control}
-                                        name="costPerUnit"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Cost/Unit ($)</FormLabel>
-                                                <FormControl>
-                                                    <Input type="number" placeholder="e.g., 150" {...field} />
-                                                </FormControl>
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={roadmapForm.control}
-                                        name="revenuePerUnit"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Revenue/Unit ($)</FormLabel>
-                                                <FormControl>
-                                                    <Input type="number" placeholder="e.g., 500" {...field} />
-                                                </FormControl>
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-                                <Button type="submit" disabled={loadingStates.roadmap}>
-                                    {loadingStates.roadmap && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Generate Roadmap
-                                </Button>
-                            </form>
-                        </Form>
-                        {renderContent(analysis.roadmap, loadingStates.roadmap, 'roadmap')}
+                        {loadingStates.roadmap ? <Skeleton className="h-48 w-full" /> :
+                            !analysis.randDPipeline ? <p className="text-sm text-muted-foreground mt-4">No R&amp;D pipeline generated yet.</p> :
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Phase</TableHead>
+                                        <TableHead>Start Date</TableHead>
+                                        <TableHead>End Date</TableHead>
+                                        <TableHead>Description</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {analysis.randDPipeline.phases.map((phase, index) => (
+                                        <TableRow key={index}>
+                                            <TableCell className="font-medium">{phase.phase}</TableCell>
+                                            <TableCell>{phase.start_date}</TableCell>
+                                            <TableCell>{phase.end_date}</TableCell>
+                                            <TableCell>{phase.description}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        }
                     </CardContent>
                 </Card>
             </TabsContent>
