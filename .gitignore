@@ -1,8 +1,12 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+<<<<<<< HEAD
 /docs
 /.idx
 /.next
 /.modified
+=======
+.idx
+>>>>>>> e649a837be66cdf1df8ec9ef34f10b37ce1ad5fa
 # dependencies
 /node_modules
 /.pnp

@@ -1,11 +1,4 @@
 'use server';
-/**
- * @fileOverview Extracts text from a document (image or PDF).
- *
- * - extractTextFromDocument - A function that handles text extraction.
- * - ExtractTextFromDocumentInput - The input type for the function.
- * - ExtractTextFromDocumentOutput - The return type for the function.
- */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';

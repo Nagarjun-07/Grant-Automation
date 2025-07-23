@@ -7,7 +7,6 @@
  * - ValidationAndRisksInput - The input type for the getValidationAndRisks function.
  * - ValidationAndRisksOutput - The return type for the getValidationAndRisks function.
  */
-
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
