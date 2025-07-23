@@ -41,7 +41,7 @@ const prompt = ai.definePrompt({
   
   Technical Document: {{{documentText}}}
   
-  Return the result as a valid JSON array of objects.
+  Return the result as a valid JSON array of objects. If no grants are found, return an empty array.
   `,
 });
 
