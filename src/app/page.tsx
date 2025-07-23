@@ -379,7 +379,7 @@ export default function DashboardPage() {
                     <CardHeader><CardTitle>TRL Breakdown</CardTitle><CardDescription>Technology Readiness Level assessed for each component.</CardDescription></CardHeader>
                     <CardContent>
                         {loadingStates.trl ? <Skeleton className="h-48 w-full" /> : 
-                            !analysis.trlBreakdown ? <p className="text-sm text-muted-foreground mt-4">No TRL breakdown generated yet.</p> :
+                            !analysis.trlBreakdown || Object.keys(analysis.trlBreakdown).length === 0 ? <p className="text-sm text-muted-foreground mt-4">No TRL breakdown generated yet.</p> :
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -522,18 +522,9 @@ export default function DashboardPage() {
                                 <Skeleton className="h-24 w-full" />
                             </div>
                         )}
-                        {!loadingStates.grants && !analysis.grantRecommendations && (
-                             <div className="text-center text-muted-foreground p-8">
-                                <p>No recommendations generated yet.</p>
-                                <Button className="mt-4" onClick={() => handleTabChange('grants')}>
-                                    <Search className="mr-2" />
-                                    Find Recommended Grants
-                                </Button>
-                            </div>
-                        )}
-                        {!loadingStates.grants && analysis.grantRecommendations && analysis.grantRecommendations.length === 0 && (
+                        {!loadingStates.grants && (!analysis.grantRecommendations || analysis.grantRecommendations.length === 0) && (
                             <p className="text-sm text-muted-foreground">
-                            No relevant grants found for this document.
+                                No recommendations generated yet. The analysis runs automatically based on your document.
                             </p>
                         )}
                          {!loadingStates.grants && analysis.grantRecommendations && analysis.grantRecommendations.length > 0 && (
