@@ -25,9 +25,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import * as actions from '@/app/actions';
 import { SearchGrantsOutput } from '@/ai/flows/search-grants';
 import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '../ui/textarea';
 
 const searchSchema = z.object({
-  query: z.string().min(1, 'Query is required'),
+  documentText: z.string().min(20, 'Please provide a summary of at least 20 characters.'),
 });
 
 
@@ -38,21 +39,20 @@ export function GrantSearch() {
 
   const form = useForm<z.infer<typeof searchSchema>>({
     resolver: zodResolver(searchSchema),
-    defaultValues: { query: '' },
+    defaultValues: { documentText: '' },
   });
 
   const onSubmit = async (values: z.infer<typeof searchSchema>) => {
     setIsSearching(true);
     setResults([]);
     try {
-        const keywords = values.query.split(',').map(k => k.trim()).filter(k => k);
-        const searchResult = await actions.findGrants({ keywords });
+        const searchResult = await actions.findGrants({ documentText: values.documentText });
         if (searchResult && searchResult.length > 0) {
             setResults(searchResult);
         } else {
              toast({
                 title: 'No Results',
-                description: 'Your search did not return any grants. Try different keywords.',
+                description: 'Your search did not return any grants. Try a different document summary.',
             });
         }
     } catch(error) {
@@ -70,30 +70,30 @@ export function GrantSearch() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Search className="text-primary" />
-          Search for Grants
+          Search for Grants Manually
         </CardTitle>
         <CardDescription>
-          Search public grant databases using comma-separated keywords.
+          Provide a project summary to find relevant grants.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-end gap-2">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
             <FormField
               control={form.control}
-              name="query"
+              name="documentText"
               render={({ field }) => (
                 <FormItem className="flex-grow">
-                  <FormLabel>Keywords</FormLabel>
+                  <FormLabel>Project Summary</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., bioreactor, research" {...field} />
+                    <Textarea placeholder="Describe your project to find matching grants..." {...field} />
                   </FormControl>
                 </FormItem>
               )}
             />
             <Button type="submit" disabled={isSearching}>
               {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-              <span className="sr-only">Search</span>
+              <span className="">Search Grants</span>
             </Button>
           </form>
         </Form>
@@ -108,7 +108,7 @@ export function GrantSearch() {
           )}
           {!isSearching && results.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              No grants found. Enter a query and start a search.
+              No grants found. Enter a summary and start a search.
             </p>
           )}
           {!isSearching && results.length > 0 && (

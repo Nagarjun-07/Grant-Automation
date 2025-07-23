@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * @fileOverview Searches for public grants.
+ * @fileOverview Searches for public grants based on provided text.
  *
  * - searchGrants - A function that handles the grant search.
  * - SearchGrantsInput - The input type for the searchGrants function.
@@ -12,7 +12,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const SearchGrantsInputSchema = z.object({
-  keywords: z.array(z.string()).describe('Keywords to search for grants.'),
+  documentText: z.string().describe('The technical documentation to find grants for.'),
 });
 export type SearchGrantsInput = z.infer<typeof SearchGrantsInputSchema>;
 
@@ -35,11 +35,11 @@ const prompt = ai.definePrompt({
   name: 'searchGrantsPrompt',
   input: {schema: SearchGrantsInputSchema},
   output: {schema: SearchGrantsOutputSchema},
-  prompt: `You are a grant search expert. Find 3-5 relevant public grants from government databases (like grants.gov) based on the following keywords.
+  prompt: `You are an expert grant search consultant. Analyze the following technical document and find 3-5 relevant public grants from government databases (like grants.gov) that would be a good fit for this project.
   
   For each grant, provide the title, a URL, and the funding amount.
   
-  Keywords: {{{keywords}}}
+  Technical Document: {{{documentText}}}
   
   Return the result as a valid JSON array of objects.
   `,

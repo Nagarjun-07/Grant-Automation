@@ -38,9 +38,11 @@ import { ValidationAndRisksOutput } from '@/ai/flows/generate-experimental-valid
 import { TRLBreakdownOutput } from '@/ai/flows/assess-trl-level';
 import { RandDPipelineOutput } from '@/ai/flows/generate-r-and-d-roadmap';
 import { SimulateUnitEconomicsOutput } from '@/ai/flows/simulate-unit-economics';
+import { SearchGrantsOutput } from '@/ai/flows/search-grants';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { GrantSearch } from '@/components/grants/grant-search';
+import { ExternalLink } from 'lucide-react';
 
 
 const SAMPLE_TECHNICAL_DOCUMENTATION = `The BR-X10 is a novel stirred-tank bioreactor designed for mammalian cell culture. It features a 10L working volume with a borosilicate glass vessel. The system incorporates a magnetic-drive agitation system with a pitched-blade impeller, ensuring low-shear mixing. Key components include the agitation system, vessel, and headplate. Advanced process control is achieved via a dedicated PLC with a user-friendly HMI. Sensors for pH (range 6.0-8.0), dissolved oxygen (DO, 0-100% saturation), and temperature (25-45°C) are integrated. The sparging system uses a microporous sparger for efficient oxygen transfer. The system is designed for batch, fed-batch, and perfusion processes. Sterilization is performed via autoclaving. The headplate includes multiple ports for media addition, sampling, and sensor integration. A peristaltic pump is used for media transfer.`;
@@ -51,6 +53,7 @@ type AnalysisState = {
   trlBreakdown: TRLBreakdownOutput | null;
   randDPipeline: RandDPipelineOutput | null;
   unitEconomics: SimulateUnitEconomicsOutput | null;
+  grantRecommendations: SearchGrantsOutput | null;
 };
 
 const economicsSchema = z.object({
@@ -70,6 +73,7 @@ export default function DashboardPage() {
     trlBreakdown: null,
     randDPipeline: null,
     unitEconomics: null,
+    grantRecommendations: null,
   });
 
   const [loadingStates, setLoadingStates] = useState({
@@ -78,6 +82,7 @@ export default function DashboardPage() {
     roadmap: false,
     validation: false,
     economics: false,
+    grants: false,
   });
 
   const { toast } = useToast();
@@ -94,7 +99,7 @@ export default function DashboardPage() {
 
   const handleProcessDocument = async (text: string) => {
     setDocText(text);
-    setAnalysis({ summary: null, validationAndRisks: null, trlBreakdown: null, randDPipeline: null, unitEconomics: null });
+    setAnalysis({ summary: null, validationAndRisks: null, trlBreakdown: null, randDPipeline: null, unitEconomics: null, grantRecommendations: null });
     setActiveTab('insights');
   };
 
@@ -121,7 +126,7 @@ export default function DashboardPage() {
 
   const handleTabChange = async (tab: string) => {
     setActiveTab(tab);
-    if (!docText && !['economics', 'grants'].includes(tab)) return;
+    if (!docText && !['economics'].includes(tab)) return;
 
     switch(tab) {
         case 'insights':
@@ -151,7 +156,9 @@ export default function DashboardPage() {
              // Handled by form submission
             break;
         case 'grants':
-            // Standalone component, no initial analysis needed here.
+            if (!analysis.grantRecommendations) {
+                runAnalysis('grants', async () => ({ grantRecommendations: await actions.findGrants({ documentText: docText }) }), 'grantRecommendations');
+            }
             break;
     }
   };
@@ -334,7 +341,7 @@ export default function DashboardPage() {
               <TabsTrigger value="trl"><ClipboardCheck className="mr-2"/>TRL Breakdown</TabsTrigger>
               <TabsTrigger value="roadmap"><GanttChartSquare className="mr-2"/>R&D Pipeline</TabsTrigger>
               <TabsTrigger value="economics"><DollarSign className="mr-2"/>Unit Economics</TabsTrigger>
-              <TabsTrigger value="grants"><Search className="mr-2"/>Grant Search</TabsTrigger>
+              <TabsTrigger value="grants"><Search className="mr-2"/>Grant Recommendations</TabsTrigger>
             </TabsList>
             
             <TabsContent value="insights">
@@ -505,7 +512,47 @@ export default function DashboardPage() {
                 </Card>
             </TabsContent>
             <TabsContent value="grants">
-                <GrantSearch />
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Grant Recommendations</CardTitle>
+                        <CardDescription>AI-powered grant recommendations based on your technical document.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {loadingStates.grants && (
+                             <div className="space-y-2">
+                                <Skeleton className="h-24 w-full" />
+                                <Skeleton className="h-24 w-full" />
+                            </div>
+                        )}
+                        {!loadingStates.grants && !analysis.grantRecommendations && (
+                             <div className="text-center text-muted-foreground p-8">
+                                <p>No recommendations generated yet.</p>
+                                <Button className="mt-4" onClick={() => handleTabChange('grants')}>
+                                    <Search className="mr-2" />
+                                    Find Recommended Grants
+                                </Button>
+                            </div>
+                        )}
+                        {!loadingStates.grants && analysis.grantRecommendations && analysis.grantRecommendations.length === 0 && (
+                            <p className="text-sm text-muted-foreground">
+                            No relevant grants found for this document.
+                            </p>
+                        )}
+                         {!loadingStates.grants && analysis.grantRecommendations && analysis.grantRecommendations.length > 0 && (
+                            <div className="space-y-3">
+                            {analysis.grantRecommendations.map((grant, index) => (
+                                <div key={index} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                                <a href={grant.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-semibold text-primary hover:underline">
+                                    {grant.title}
+                                    <ExternalLink className="w-4 h-4" />
+                                </a>
+                                <div className="flex items-center gap-1 text-sm font-medium mt-2"><DollarSign className="w-3.5 h-3.5" />{grant.funding}</div>
+                                </div>
+                            ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             </TabsContent>
           </Tabs>
         </div>
