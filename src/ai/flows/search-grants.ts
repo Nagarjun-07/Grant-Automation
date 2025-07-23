@@ -7,7 +7,6 @@
  * - SearchGrantsInput - The input type for the searchGrants function.
  * - SearchGrantsOutput - The return type for the searchGrants function.
  */
-
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
