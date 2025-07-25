@@ -110,10 +110,24 @@ export function GrantRecommender() {
                 </FormItem>
               )}
             />
-            <Button type="submit" disabled={isSearching}>
-              {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-              <span className="">Get Recommendations</span>
-            </Button>
+            <div className="flex gap-2">
+              <Button type="submit" disabled={isSearching}>
+                {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                <span className="">Get Recommendations</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={async () => {
+                  const summary = await actions.generateProjectSummary();
+                  if (summary) {
+                    form.setValue('documentText', summary.projectSummary);
+                  }
+                }}
+              >
+                Generate Summary
+              </Button>
+            </div>
           </form>
         </Form>
         <div className="mt-6 space-y-4">
