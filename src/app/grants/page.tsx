@@ -1,11 +1,15 @@
 import { GrantProposalGenerator } from "@/components/grants/grant-proposal-generator";
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { GrantRecommender } from "@/components/grants/grant-recommender";
 =======
 import { StrategicGrantSearch } from "@/components/grants/strategic-grant-search";
 <<<<<<< HEAD
 >>>>>>> de71361 (now remove grant recommendation section from dashboard and make sure in)
 =======
+=======
+import { GrantSearch } from "@/components/grants/grant-search";
+>>>>>>> c3b7ded (still not generating please do something make it generate something in t)
 
 >>>>>>> 27a66dc (Grant Management)
 export default function GrantsPage() {
@@ -28,8 +32,12 @@ export default function GrantsPage() {
 =======
             <div className="grid grid-cols-1 gap-8 items-start lg:grid-cols-2">
                 <div className="space-y-8">
+<<<<<<< HEAD
                     <StrategicGrantSearch />
 >>>>>>> 27a66dc (Grant Management)
+=======
+                    <GrantSearch />
+>>>>>>> c3b7ded (still not generating please do something make it generate something in t)
                 </div>
                 <div className="space-y-8">
                     <GrantProposalGenerator />

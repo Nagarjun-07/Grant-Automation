@@ -9,4 +9,3 @@ import '@/ai/flows/summarize-technical-documentation.ts';
 import '@/ai/flows/search-grants.ts';
 import '@/ai/flows/simulate-unit-economics.ts';
 import '@/ai/flows/extract-text-from-document.ts';
-import '@/ai/flows/strategic-grant-analysis.ts';

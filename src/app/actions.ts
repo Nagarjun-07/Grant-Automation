@@ -40,7 +40,6 @@ import {
   type SimulateUnitEconomicsOutput,
 } from '@/ai/flows/simulate-unit-economics';
 import { extractTextFromDocument as extractTextFromDocumentFlow, type ExtractTextFromDocumentInput } from '@/ai/flows/extract-text-from-document';
-import { strategicGrantAnalysis, type StrategicGrantAnalysisInput, type StrategicGrantAnalysisOutput } from '@/ai/flows/strategic-grant-analysis';
 
 
 export async function summarize(input: { documentText: string }) {
@@ -132,13 +131,4 @@ export async function extractText(input: ExtractTextFromDocumentInput) {
     console.error(e);
     return null;
   }
-}
-
-export async function findRecommendedGrants(input: StrategicGrantAnalysisInput): Promise<StrategicGrantAnalysisOutput | null> {
-    try {
-        return await strategicGrantAnalysis(input);
-    } catch(e) {
-        console.error(e);
-        return null;
-    }
 }
