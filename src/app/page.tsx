@@ -36,7 +36,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import * as actions from './actions';
 import { ValidationAndRisksOutput } from '@/ai/flows/generate-experimental-validation';
-import { TRLBreakdownOutput } from '@/ai/flows/assess-trl-level';
 import { RandDPipelineOutput } from '@/ai/flows/generate-r-and-d-roadmap';
 import { SimulateUnitEconomicsOutput } from '@/ai/flows/simulate-unit-economics';
 import { StrategicGrantAnalysisOutput } from '@/ai/flows/strategic-grant-analysis';
@@ -49,7 +48,6 @@ const SAMPLE_TECHNICAL_DOCUMENTATION = `The BR-X10 is a novel stirred-tank biore
 type AnalysisState = {
   summary: string | null;
   validationAndRisks: ValidationAndRisksOutput | null;
-  trlBreakdown: TRLBreakdownOutput | null;
   randDPipeline: RandDPipelineOutput | null;
   unitEconomics: SimulateUnitEconomicsOutput | null;
   grantRecommendations: StrategicGrantAnalysisOutput | null;
@@ -69,7 +67,6 @@ export default function DashboardPage() {
   const [analysis, setAnalysis] = useState<AnalysisState>({
     summary: null,
     validationAndRisks: null,
-    trlBreakdown: null,
     randDPipeline: null,
     unitEconomics: null,
     grantRecommendations: null,
@@ -77,7 +74,6 @@ export default function DashboardPage() {
 
   const [loadingStates, setLoadingStates] = useState({
     insights: false,
-    trl: false,
     roadmap: false,
     validation: false,
     economics: false,
@@ -98,7 +94,7 @@ export default function DashboardPage() {
 
   const handleProcessDocument = async (text: string) => {
     setDocText(text);
-    setAnalysis({ summary: null, validationAndRisks: null, trlBreakdown: null, randDPipeline: null, unitEconomics: null, grantRecommendations: null });
+    setAnalysis({ summary: null, validationAndRisks: null, randDPipeline: null, unitEconomics: null, grantRecommendations: null });
     setActiveTab('insights');
   };
 
@@ -136,11 +132,6 @@ export default function DashboardPage() {
         case 'validation':
             if (!analysis.validationAndRisks) {
                 runAnalysis('validation', () => actions.validationAndRisks({ technicalDocumentation: docText }), 'validationAndRisks');
-            }
-            break;
-        case 'trl':
-            if (!analysis.trlBreakdown) {
-                 runAnalysis('trl', () => actions.trlBreakdown({ technicalDocumentation: docText }), 'trlBreakdown');
             }
             break;
         case 'roadmap':
@@ -331,10 +322,9 @@ export default function DashboardPage() {
           </Card>
 
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 h-auto">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-auto">
               <TabsTrigger value="insights"><Lightbulb className="mr-2"/>LLM Insight Analysis</TabsTrigger>
               <TabsTrigger value="validation"><AlertTriangle className="mr-2"/>Validation and Risks</TabsTrigger>
-              <TabsTrigger value="trl"><ClipboardCheck className="mr-2"/>TRL Breakdown</TabsTrigger>
               <TabsTrigger value="roadmap"><GanttChartSquare className="mr-2"/>R&D Pipeline</TabsTrigger>
               <TabsTrigger value="economics"><DollarSign className="mr-2"/>Unit Economics</TabsTrigger>
               <TabsTrigger value="grants"><Search className="mr-2"/>Grant Recommendations</TabsTrigger>
@@ -369,36 +359,6 @@ export default function DashboardPage() {
                             </div>
                         </div>
                       }
-                    </CardContent>
-                </Card>
-            </TabsContent>
-            <TabsContent value="trl">
-                <Card>
-                    <CardHeader><CardTitle>TRL Breakdown</CardTitle><CardDescription>Technology Readiness Level assessed for each component.</CardDescription></CardHeader>
-                    <CardContent>
-                        {loadingStates.trl ? <Skeleton className="h-48 w-full" /> : 
-                            !analysis.trlBreakdown || Object.keys(analysis.trlBreakdown).length === 0 ? <p className="text-sm text-muted-foreground mt-4">No TRL breakdown generated yet.</p> :
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Component</TableHead>
-                                        <TableHead>TRL</TableHead>
-                                        <TableHead>Justification</TableHead>
-                                        <TableHead>Timestamp</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {Object.entries(analysis.trlBreakdown).map(([component, data]) => (
-                                        <TableRow key={component}>
-                                            <TableCell className="font-medium">{component}</TableCell>
-                                            <TableCell><span className="font-mono text-primary font-bold text-base">{data.trl} / 9</span></TableCell>
-                                            <TableCell>{data.justification}</TableCell>
-                                            <TableCell>{data.timestamp}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        }
                     </CardContent>
                 </Card>
             </TabsContent>

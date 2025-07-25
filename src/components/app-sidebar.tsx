@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Coins, UserCircle, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Coins, UserCircle, Settings, LogOut, ClipboardCheck } from 'lucide-react';
 import {
   Sidebar,
   SidebarHeader,
@@ -31,6 +31,11 @@ export function AppSidebar() {
       label: 'Grants',
       icon: Coins,
     },
+    {
+        href: '/trl-breakdown',
+        label: 'TRL Breakdown',
+        icon: ClipboardCheck,
+    }
   ];
 
   return (

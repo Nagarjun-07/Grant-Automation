@@ -49,7 +49,11 @@
     "jspdf": "^3.0.1",
 =======
     "jspdf": "^2.5.1",
+<<<<<<< HEAD
 >>>>>>> fb0067a (Grant Management)
+=======
+    "jspdf-autotable": "^3.8.2",
+>>>>>>> 4aa9a94 (Remove the "TRL Breakdown" section from the main dashboard view.)
     "lucide-react": "^0.475.0",
     "next": "15.3.3",
     "patch-package": "^8.0.0",
