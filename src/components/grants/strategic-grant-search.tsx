@@ -9,6 +9,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import {
   Form,
@@ -55,6 +56,7 @@ export function StrategicGrantSearch() {
                 description: 'AI-powered grant recommendations are ready below.',
             });
         } else {
+             setResults([]); // Set to empty array to show "No results" message
              toast({
                 title: 'No Results',
                 description: 'Your search did not return any grants. Try a different summary.',
@@ -72,18 +74,18 @@ export function StrategicGrantSearch() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Search className="text-primary" />
-          Strategic Grant Search
-        </CardTitle>
-        <CardDescription>
-          Provide a detailed project summary to find and analyze relevant grant opportunities.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Search className="text-primary" />
+              Strategic Grant Search
+            </CardTitle>
+            <CardDescription>
+              Provide a detailed project summary to find and analyze relevant grant opportunities.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <FormField
               control={form.control}
               name="technicalDocumentation"
@@ -97,64 +99,72 @@ export function StrategicGrantSearch() {
                 </FormItem>
               )}
             />
-            <Button type="submit" disabled={isSearching} className="w-full md:w-auto md:self-end">
-              {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              <span className="ml-2">Analyze and Find Grants</span>
+          </CardContent>
+          <CardFooter className="flex-col items-stretch">
+            <Button type="submit" disabled={isSearching} className="w-full">
+              {isSearching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+              Analyze and Find Grants
             </Button>
-          </form>
-        </Form>
-        <div className="mt-6 space-y-4">
-          <h3 className="text-lg font-semibold">Recommendations</h3>
-          {isSearching && (
-            <div className="space-y-4">
-                <Skeleton className="h-28 w-full" />
-                <Skeleton className="h-28 w-full" />
+
+            <div className="mt-6 space-y-4">
+              <h3 className="text-lg font-semibold">Recommendations</h3>
+              {isSearching && (
+                <div className="space-y-4">
+                    <Skeleton className="h-28 w-full" />
+                    <Skeleton className="h-28 w-full" />
+                </div>
+              )}
+              {!isSearching && results === null && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Paste your project summary above and start the analysis.
+                </p>
+              )}
+               {!isSearching && results && results.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                    No matching grants were found. Please try again with a more detailed summary.
+                </p>
+              )}
+               {!isSearching && results && results.length > 0 && (
+                <Accordion type="single" collapsible className="w-full space-y-4">
+                  {results.map((grant, index) => (
+                    <AccordionItem value={`item-${index}`} key={index} className="border rounded-lg bg-background/50">
+                      <AccordionTrigger className="p-4 hover:no-underline">
+                        <div className="text-left w-full">
+                           <a href={grant.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-semibold text-primary hover:underline">
+                            {grant.title}
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                          <div className="flex items-center gap-1 text-sm font-medium mt-2"><DollarSign className="w-3.5 h-3.5" />{grant.funding}</div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="p-4 pt-0">
+                        <div className="space-y-4">
+                            <div>
+                                <h4 className="font-semibold mb-1">Funding Purpose</h4>
+                                <p className="text-sm text-muted-foreground">{grant.purpose}</p>
+                            </div>
+                             <div>
+                                <h4 className="font-semibold mb-1">Eligibility</h4>
+                                <p className="text-sm text-muted-foreground">{grant.eligibility}</p>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold mb-1">Why it's a Fit</h4>
+                                <p className="text-sm text-muted-foreground">{grant.fitReason}</p>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold mb-1">How to Align Your Proposal</h4>
+                                <p className="text-sm text-muted-foreground">{grant.alignmentTips}</p>
+                            </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+            )}
             </div>
-          )}
-          {!isSearching && (!results || results.length === 0) && (
-            <p className="text-sm text-muted-foreground">
-              No recommendations generated yet. Paste your project summary above and start the analysis.
-            </p>
-          )}
-           {!isSearching && results && results.length > 0 && (
-            <Accordion type="single" collapsible className="w-full space-y-4">
-              {results.map((grant, index) => (
-                <AccordionItem value={`item-${index}`} key={index} className="border rounded-lg bg-background/50">
-                  <AccordionTrigger className="p-4 hover:no-underline">
-                    <div className="text-left w-full">
-                       <a href={grant.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-semibold text-primary hover:underline">
-                        {grant.title}
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                      <div className="flex items-center gap-1 text-sm font-medium mt-2"><DollarSign className="w-3.5 h-3.5" />{grant.funding}</div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="p-4 pt-0">
-                    <div className="space-y-4">
-                        <div>
-                            <h4 className="font-semibold mb-1">Funding Purpose</h4>
-                            <p className="text-sm text-muted-foreground">{grant.purpose}</p>
-                        </div>
-                         <div>
-                            <h4 className="font-semibold mb-1">Eligibility</h4>
-                            <p className="text-sm text-muted-foreground">{grant.eligibility}</p>
-                        </div>
-                        <div>
-                            <h4 className="font-semibold mb-1">Why it's a Fit</h4>
-                            <p className="text-sm text-muted-foreground">{grant.fitReason}</p>
-                        </div>
-                        <div>
-                            <h4 className="font-semibold mb-1">How to Align Your Proposal</h4>
-                            <p className="text-sm text-muted-foreground">{grant.alignmentTips}</p>
-                        </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-        )}
-        </div>
-      </CardContent>
+          </CardFooter>
+        </form>
+      </Form>
     </Card>
   );
 }
