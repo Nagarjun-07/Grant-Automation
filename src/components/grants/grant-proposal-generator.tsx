@@ -130,7 +130,7 @@ export function GrantProposalGenerator() {
                 <div>
                     <h4 className="font-semibold text-lg mb-2">Generated Proposal</h4>
                     <div className="p-4 bg-muted/50 rounded-md max-w-none">
-                        <pre className="whitespace-pre-wrap font-body bg-transparent p-0 text-black">{proposal}</pre>
+                        <pre className="whitespace-pre-wrap font-body bg-transparent p-0" style={{color: 'black'}}>{proposal}</pre>
                     </div>
                 </div>
              )}
