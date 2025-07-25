@@ -1,3 +1,4 @@
+import { GrantDetailsExtractor } from "@/components/grants/grant-details-extractor";
 import { GrantProposalGenerator } from "@/components/grants/grant-proposal-generator";
 import { GrantSearch } from "@/components/grants/grant-search";
 export default function GrantsPage() {
@@ -15,6 +16,9 @@ export default function GrantsPage() {
                 </div>
                 <div className="lg:col-span-2">
                   <GrantProposalGenerator />
+                </div>
+                <div className="lg:col-span-2">
+                  <GrantDetailsExtractor />
                 </div>
             </div>
         </div>
