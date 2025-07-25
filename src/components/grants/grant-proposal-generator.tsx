@@ -28,7 +28,11 @@ import { Sparkles, Loader2, FileDown } from 'lucide-react';
 import * as actions from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
+<<<<<<< HEAD
 import html2canvas from 'html2canvas';
+=======
+import { Document, Packer, Paragraph, TextRun } from 'docx';
+>>>>>>> fb0067a (Grant Management)
 
 const proposalSchema = z.object({
   grantDetails: z.string().min(10, 'Grant details are required'),
@@ -49,6 +53,39 @@ export function GrantProposalGenerator() {
       projectSummary: '',
     },
   });
+
+  const handleDownloadPdf = () => {
+    if (!proposal) return;
+    const doc = new jsPDF();
+    doc.text(proposal, 10, 10);
+    doc.save('grant-proposal.pdf');
+  };
+
+  const handleDownloadDocx = async () => {
+    if (!proposal) return;
+
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: proposal.split('\n').map(p => 
+            new Paragraph({
+                children: [new TextRun(p)]
+            })
+        )
+      }],
+    });
+
+    const blob = await Packer.toBlob(doc);
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'grant-proposal.docx';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
 
   const onSubmit = async (values: z.infer<typeof proposalSchema>) => {
     setIsLoading(true);
@@ -131,8 +168,18 @@ export function GrantProposalGenerator() {
              {proposal && (
                 <div id="proposal-content">
                     <h4 className="font-semibold text-lg mb-2">Generated Proposal</h4>
-                    <div className="p-4 bg-muted/50 rounded-md prose prose-sm max-w-none">
-                        <pre className="whitespace-pre-wrap font-body bg-transparent p-0 text-black">{proposal}</pre>
+                    <div className="p-4 bg-muted/50 rounded-md prose prose-sm max-w-none prose-black">
+                        <pre className="whitespace-pre-wrap font-body bg-transparent p-0">{proposal}</pre>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                        <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
+                            <FileDown className="mr-2 h-4 w-4"/>
+                            Download PDF
+                        </Button>
+                         <Button variant="outline" size="sm" onClick={handleDownloadDocx}>
+                            <FileDown className="mr-2 h-4 w-4"/>
+                            Download DOCX
+                        </Button>
                     </div>
                 </div>
              )}

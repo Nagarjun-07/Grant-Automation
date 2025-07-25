@@ -11,7 +11,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const SearchGrantsInputSchema = z.object({
-  keywords: z.string().describe('Keywords to search for grants.'),
+  projectSummary: z.string().describe('A summary of the project to find grants for.'),
 });
 export type SearchGrantsInput = z.infer<typeof SearchGrantsInputSchema>;
 
@@ -34,7 +34,7 @@ const prompt = ai.definePrompt({
   name: 'searchGrantsPrompt',
   input: {schema: SearchGrantsInputSchema},
   output: {schema: SearchGrantsOutputSchema},
-  prompt: `You are an expert grant search consultant. Find 3-5 relevant public grants from government databases (like grants.gov) based on the following keywords: {{{keywords}}}.
+  prompt: `You are an expert grant search consultant. Find 3-5 relevant public grants from government databases (like grants.gov) based on the following project summary: {{{projectSummary}}}.
   
   For each grant, provide the title, a URL, and the funding amount.
   
