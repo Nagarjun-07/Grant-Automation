@@ -1,6 +1,5 @@
-import { GrantDetailsExtractor } from "@/components/grants/grant-details-extractor";
 import { GrantProposalGenerator } from "@/components/grants/grant-proposal-generator";
-import { GrantSearch } from "@/components/grants/grant-search";
+import { GrantRecommender } from "@/components/grants/grant-recommender";
 export default function GrantsPage() {
     return (
         <div className="container mx-auto p-4 md:p-8">
@@ -12,13 +11,10 @@ export default function GrantsPage() {
             </header>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                 <div className="lg:col-span-2">
-                  <GrantSearch />
+                  <GrantRecommender />
                 </div>
                 <div className="lg:col-span-2">
                   <GrantProposalGenerator />
-                </div>
-                <div className="lg:col-span-2">
-                  <GrantDetailsExtractor />
                 </div>
             </div>
         </div>
