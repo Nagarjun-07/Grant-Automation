@@ -38,7 +38,6 @@ import * as actions from './actions';
 import { ValidationAndRisksOutput } from '@/ai/flows/generate-experimental-validation';
 import { RandDPipelineOutput } from '@/ai/flows/generate-r-and-d-roadmap';
 import { SimulateUnitEconomicsOutput } from '@/ai/flows/simulate-unit-economics';
-import { StrategicGrantAnalysisOutput } from '@/ai/flows/strategic-grant-analysis';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -50,7 +49,6 @@ type AnalysisState = {
   validationAndRisks: ValidationAndRisksOutput | null;
   randDPipeline: RandDPipelineOutput | null;
   unitEconomics: SimulateUnitEconomicsOutput | null;
-  grantRecommendations: StrategicGrantAnalysisOutput | null;
 };
 
 const economicsSchema = z.object({
@@ -69,7 +67,6 @@ export default function DashboardPage() {
     validationAndRisks: null,
     randDPipeline: null,
     unitEconomics: null,
-    grantRecommendations: null,
   });
 
   const [loadingStates, setLoadingStates] = useState({
@@ -77,7 +74,6 @@ export default function DashboardPage() {
     roadmap: false,
     validation: false,
     economics: false,
-    grants: false,
   });
 
   const { toast } = useToast();
@@ -94,7 +90,7 @@ export default function DashboardPage() {
 
   const handleProcessDocument = async (text: string) => {
     setDocText(text);
-    setAnalysis({ summary: null, validationAndRisks: null, randDPipeline: null, unitEconomics: null, grantRecommendations: null });
+    setAnalysis({ summary: null, validationAndRisks: null, randDPipeline: null, unitEconomics: null });
     setActiveTab('insights');
   };
 
@@ -141,11 +137,6 @@ export default function DashboardPage() {
             break;
         case 'economics':
              // Handled by form submission
-            break;
-        case 'grants':
-            if (!analysis.grantRecommendations) {
-                runAnalysis('grants', () => actions.findRecommendedGrants({ technicalDocumentation: docText }), 'grantRecommendations');
-            }
             break;
     }
   };
@@ -322,12 +313,11 @@ export default function DashboardPage() {
           </Card>
 
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-auto">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto">
               <TabsTrigger value="insights"><Lightbulb className="mr-2"/>LLM Insight Analysis</TabsTrigger>
               <TabsTrigger value="validation"><AlertTriangle className="mr-2"/>Validation and Risks</TabsTrigger>
               <TabsTrigger value="roadmap"><GanttChartSquare className="mr-2"/>R&D Pipeline</TabsTrigger>
               <TabsTrigger value="economics"><DollarSign className="mr-2"/>Unit Economics</TabsTrigger>
-              <TabsTrigger value="grants"><Search className="mr-2"/>Grant Recommendations</TabsTrigger>
             </TabsList>
             
             <TabsContent value="insights">
@@ -463,64 +453,6 @@ export default function DashboardPage() {
                                     <CardContent className="text-2xl font-bold">{analysis.unitEconomics.payback_period}</CardContent>
                                 </Card>
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
-            </TabsContent>
-            <TabsContent value="grants">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Grant Recommendations</CardTitle>
-                        <CardDescription>AI-powered strategic grant recommendations based on your technical document.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {loadingStates.grants && (
-                             <div className="space-y-4">
-                                <Skeleton className="h-28 w-full" />
-                                <Skeleton className="h-28 w-full" />
-                            </div>
-                        )}
-                        {!loadingStates.grants && (!analysis.grantRecommendations || analysis.grantRecommendations.length === 0) && (
-                            <p className="text-sm text-muted-foreground">
-                                No recommendations generated yet. The analysis runs automatically based on your document.
-                            </p>
-                        )}
-                         {!loadingStates.grants && analysis.grantRecommendations && analysis.grantRecommendations.length > 0 && (
-                            <Accordion type="single" collapsible className="w-full space-y-4">
-                              {analysis.grantRecommendations.map((grant, index) => (
-                                <AccordionItem value={`item-${index}`} key={index} className="border rounded-lg bg-background/50">
-                                  <AccordionTrigger className="p-4 hover:no-underline">
-                                    <div className="text-left w-full">
-                                      <div className="flex items-center gap-2 font-semibold text-primary">
-                                        {grant.title}
-                                        <ExternalLink className="w-4 h-4" />
-                                      </div>
-                                      <div className="flex items-center gap-1 text-sm font-medium mt-2"><DollarSign className="w-3.5 h-3.5" />{grant.funding}</div>
-                                    </div>
-                                  </AccordionTrigger>
-                                  <AccordionContent className="p-4 pt-0">
-                                    <div className="space-y-4">
-                                        <div>
-                                            <h4 className="font-semibold mb-1">Funding Purpose</h4>
-                                            <p className="text-sm text-muted-foreground">{grant.purpose}</p>
-                                        </div>
-                                         <div>
-                                            <h4 className="font-semibold mb-1">Eligibility</h4>
-                                            <p className="text-sm text-muted-foreground">{grant.eligibility}</p>
-                                        </div>
-                                        <div>
-                                            <h4 className="font-semibold mb-1">Why it's a Fit</h4>
-                                            <p className="text-sm text-muted-foreground">{grant.fitReason}</p>
-                                        </div>
-                                        <div>
-                                            <h4 className="font-semibold mb-1">How to Align Your Proposal</h4>
-                                            <p className="text-sm text-muted-foreground">{grant.alignmentTips}</p>
-                                        </div>
-                                    </div>
-                                  </AccordionContent>
-                                </AccordionItem>
-                              ))}
-                            </Accordion>
                         )}
                     </CardContent>
                 </Card>
