@@ -29,6 +29,8 @@ import * as actions from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { saveAs } from 'file-saver';
+import htmlToDocx from 'html-to-docx';
 
 const proposalSchema = z.object({
   grantDetails: z.string().min(10, 'Grant details are required'),
@@ -141,10 +143,12 @@ export function GrantProposalGenerator() {
                             onClick={() => {
                                 const input = document.getElementById('proposal-content');
                                 if (input) {
-                                    html2canvas(input).then(canvas => {
+                                    html2canvas(input, { scrollY: -window.scrollY, windowWidth: input.scrollWidth, windowHeight: input.scrollHeight }).then(canvas => {
                                         const imgData = canvas.toDataURL('image/png');
-                                        const pdf = new jsPDF();
-                                        pdf.addImage(imgData, 'PNG', 0, 0);
+                                        const pdf = new jsPDF('p', 'mm', 'a4');
+                                        const pdfWidth = pdf.internal.pageSize.getWidth();
+                                        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                                        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
                                         pdf.save('proposal.pdf');
                                     });
                                 }
@@ -152,6 +156,18 @@ export function GrantProposalGenerator() {
                         >
                             <FileDown className="mr-2 h-4 w-4" />
                             Download as PDF
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={async () => {
+                                const htmlString = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Proposal</title></head><body>${proposal?.replace(/\*/g, '')}</body></html>`;
+                                const fileBuffer = await htmlToDocx(htmlString);
+                                saveAs(fileBuffer, 'proposal.docx');
+                            }}
+                        >
+                            <FileDown className="mr-2 h-4 w-4" />
+                            Download as DOCX
                         </Button>
                     </div>
                 </div>
