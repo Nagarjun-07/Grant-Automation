@@ -31,13 +31,7 @@ export async function getTRLBreakdown(input: TRLBreakdownInput): Promise<TRLBrea
   return getTRLBreakdownFlow(input);
 }
 
-const TRLPromptInputSchema = z.object({
-    technicalDocumentation: z.string(),
-    components: z.array(z.string()),
-});
-
 // This schema defines what the AI is expected to return.
-// Notice it does NOT include the timestamp, as we will add that in our code.
 const AIOutputSchema = z.record(
     z.string(),
     z.object({
@@ -46,26 +40,6 @@ const AIOutputSchema = z.record(
     })
 );
 
-
-const prompt = ai.definePrompt({
-  name: 'getTRLBreakdownPrompt',
-  input: {schema: TRLPromptInputSchema},
-  output: {schema: AIOutputSchema}, // Use the simpler AI output schema
-  prompt: `You are a TRL assessment expert. Analyze the technical documentation provided and assign a TRL (1-9) to each of the following components: {{#each components}}"{{this}}"{{#unless @last}}, {{/unless}}{{/each}}. 
-  
-  Return ONLY a valid JSON object mapping the components you were asked to assess to their TRL levels and justifications. Do not assess any other components.
-
-  Example Output Format:
-  {
-    "sensor": {"trl": 4, "justification": "Lab validated"},
-    "pump": {"trl": 3, "justification": "Proof of concept"}
-  }
-
-  Technical Documentation:
-  {{{technicalDocumentation}}}
-  `,
-});
-
 const getTRLBreakdownFlow = ai.defineFlow(
   {
     name: 'getTRLBreakdownFlow',
@@ -73,7 +47,7 @@ const getTRLBreakdownFlow = ai.defineFlow(
     outputSchema: TRLBreakdownOutputSchema,
   },
   async ({ technicalDocumentation }) => {
-    // 1. Identify components first, using a regex like in the Python example.
+    // 1. Identify components first, using a regex.
     const componentRegex = /(bioreactor|reactor|sensor|control system|pump|valve)/gi;
     const foundComponents = [...new Set(technicalDocumentation.match(componentRegex)?.map(c => c.toLowerCase()) || [])];
 
@@ -82,21 +56,45 @@ const getTRLBreakdownFlow = ai.defineFlow(
       return {};
     }
 
-    // 2. Call the AI with the found components.
-    const { output } = await prompt({
-        technicalDocumentation,
-        components: foundComponents,
+    // 2. Build the prompt and call the AI.
+    const prompt = `You are a TRL assessment expert. Analyze the technical documentation provided and assign a TRL (1-9) to each of the following components: ${foundComponents.join(', ')}. 
+  
+Return ONLY a valid JSON object mapping the components you were asked to assess to their TRL levels and justifications. Do not assess any other components.
+
+Example Output Format:
+{
+  "sensor": {"trl": 4, "justification": "Lab validated"},
+  "pump": {"trl": 3, "justification": "Proof of concept"}
+}
+
+Technical Documentation:
+${technicalDocumentation}`;
+
+    const { text } = await ai.generate({
+      prompt: prompt,
+      model: 'googleai/gemini-2.0-flash',
+      config: {
+        temperature: 0.2, // Lower temperature for more predictable JSON output
+      }
     });
+
+    let aiOutput: z.infer<typeof AIOutputSchema> = {};
+    try {
+        aiOutput = JSON.parse(text);
+    } catch(e) {
+        console.error("Failed to parse AI response as JSON", text);
+        // If parsing fails, aiOutput remains an empty object, and the fallback logic will handle it.
+    }
 
     const finalOutput: TRLBreakdownOutput = {};
     const currentTime = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }).replace(/,/, '') + ' IST';
     
     // 3. Validate and enhance the AI's response (This is the crucial step).
     for (const component of foundComponents) {
-        const assessment = output?.[component];
+        const assessment = aiOutput?.[component];
 
         // Check if the AI returned a valid assessment for the component.
-        if (assessment && typeof assessment.trl === 'number' && assessment.trl >= 1 && assessment.trl <= 9) {
+        if (assessment && typeof assessment.trl === 'number' && assessment.trl >= 1 && assessment.trl <= 9 && assessment.justification) {
             // If valid, add it to our final output with the current timestamp.
             finalOutput[component] = {
                 ...assessment,
