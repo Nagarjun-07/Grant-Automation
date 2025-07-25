@@ -24,9 +24,11 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, FileDown } from 'lucide-react';
 import * as actions from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const proposalSchema = z.object({
   grantDetails: z.string().min(10, 'Grant details are required'),
@@ -127,10 +129,30 @@ export function GrantProposalGenerator() {
             />
              {isLoading && <Skeleton className="h-40 w-full" />}
              {proposal && (
-                <div>
+                <div id="proposal-content">
                     <h4 className="font-semibold text-lg mb-2">Generated Proposal</h4>
                     <div className="p-4 bg-muted/50 rounded-md max-w-none">
-                        <pre className="whitespace-pre-wrap font-body bg-transparent p-0" style={{color: 'black'}}>{proposal}</pre>
+                        <pre className="whitespace-pre-wrap font-body bg-transparent p-0" style={{color: 'black'}}>{proposal.replace(/\*/g, '')}</pre>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                                const input = document.getElementById('proposal-content');
+                                if (input) {
+                                    html2canvas(input).then(canvas => {
+                                        const imgData = canvas.toDataURL('image/png');
+                                        const pdf = new jsPDF();
+                                        pdf.addImage(imgData, 'PNG', 0, 0);
+                                        pdf.save('proposal.pdf');
+                                    });
+                                }
+                            }}
+                        >
+                            <FileDown className="mr-2 h-4 w-4" />
+                            Download as PDF
+                        </Button>
                     </div>
                 </div>
              )}
