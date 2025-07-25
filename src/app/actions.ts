@@ -27,14 +27,6 @@ import {
   type SearchGrantsOutput
 } from '@/ai/flows/search-grants';
 import {
-  extractGrantDetails as extractGrantDetailsFlow,
-  type ExtractGrantDetailsInput,
-  type ExtractGrantDetailsOutput,
-} from '@/ai/flows/extract-grant-details';
-import {
-  generateProjectSummary as generateProjectSummaryFlow,
-} from '@/ai/flows/generate-project-summary';
-import {
   simulateUnitEconomics,
   type SimulateUnitEconomicsInput,
   type SimulateUnitEconomicsOutput,
@@ -81,24 +73,6 @@ export async function randDPipeline(input: RandDPipelineInput): Promise<RandDPip
 export async function createGrantProposal(input: GenerateGrantProposalInput) {
     try {
         return await generateGrantProposal(input);
-    } catch(e) {
-        console.error(e);
-        return null;
-    }
-}
-
-export async function generateProjectSummary() {
-    try {
-        return await generateProjectSummaryFlow();
-    } catch(e) {
-        console.error(e);
-        return null;
-    }
-}
-
-export async function extractGrantDetails(input: ExtractGrantDetailsInput): Promise<ExtractGrantDetailsOutput | null> {
-    try {
-        return await extractGrantDetailsFlow(input);
     } catch(e) {
         console.error(e);
         return null;

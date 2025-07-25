@@ -1,5 +1,5 @@
 import { GrantProposalGenerator } from "@/components/grants/grant-proposal-generator";
-import { GrantRecommender } from "@/components/grants/grant-recommender";
+import { GrantSearch } from "@/components/grants/grant-search";
 export default function GrantsPage() {
     return (
         <div className="container mx-auto p-4 md:p-8">
@@ -11,7 +11,7 @@ export default function GrantsPage() {
             </header>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                 <div className="lg:col-span-2">
-                  <GrantRecommender />
+                  <GrantSearch />
                 </div>
                 <div className="lg:col-span-2">
                   <GrantProposalGenerator />

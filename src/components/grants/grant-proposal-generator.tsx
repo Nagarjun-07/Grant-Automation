@@ -24,13 +24,9 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Loader2, FileDown } from 'lucide-react';
+import { Sparkles, Loader2 } from 'lucide-react';
 import * as actions from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-import { saveAs } from 'file-saver';
-import htmlToDocx from 'html-to-docx';
 
 const proposalSchema = z.object({
   grantDetails: z.string().min(10, 'Grant details are required'),
@@ -131,44 +127,10 @@ export function GrantProposalGenerator() {
             />
              {isLoading && <Skeleton className="h-40 w-full" />}
              {proposal && (
-                <div id="proposal-content">
+                <div>
                     <h4 className="font-semibold text-lg mb-2">Generated Proposal</h4>
                     <div className="p-4 bg-muted/50 rounded-md max-w-none">
-                        <pre className="whitespace-pre-wrap font-body bg-transparent p-0" style={{color: 'black'}}>{proposal.replace(/\*/g, '')}</pre>
-                    </div>
-                    <div className="flex gap-2 mt-4">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                                const input = document.getElementById('proposal-content');
-                                if (input) {
-                                    html2canvas(input, { scrollY: -window.scrollY, windowWidth: input.scrollWidth, windowHeight: input.scrollHeight }).then(canvas => {
-                                        const imgData = canvas.toDataURL('image/png');
-                                        const pdf = new jsPDF('p', 'mm', 'a4');
-                                        const pdfWidth = pdf.internal.pageSize.getWidth();
-                                        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-                                        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                                        pdf.save('proposal.pdf');
-                                    });
-                                }
-                            }}
-                        >
-                            <FileDown className="mr-2 h-4 w-4" />
-                            Download as PDF
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={async () => {
-                                const htmlString = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Proposal</title></head><body>${proposal?.replace(/\*/g, '')}</body></html>`;
-                                const fileBuffer = await htmlToDocx(htmlString);
-                                saveAs(fileBuffer, 'proposal.docx');
-                            }}
-                        >
-                            <FileDown className="mr-2 h-4 w-4" />
-                            Download as DOCX
-                        </Button>
+                        <pre className="whitespace-pre-wrap font-body bg-transparent p-0" style={{color: 'black'}}>{proposal}</pre>
                     </div>
                 </div>
              )}
