@@ -19,7 +19,8 @@ import {
 } from '@/ai/flows/generate-r-and-d-roadmap';
 import { 
   generateGrantProposal, 
-  type GenerateGrantProposalInput 
+  type GenerateGrantProposalInput,
+  type GenerateGrantProposalOutput
 } from '@/ai/flows/generate-grant-proposal';
 import {
   extractGrantDetails as extractGrantDetailsFlow,
@@ -73,7 +74,7 @@ export async function randDPipeline(input: RandDPipelineInput): Promise<RandDPip
   }
 }
 
-export async function createGrantProposal(input: GenerateGrantProposalInput) {
+export async function createGrantProposal(input: GenerateGrantProposalInput): Promise<GenerateGrantProposalOutput | null> {
     try {
         return await generateGrantProposal(input);
     } catch(e) {

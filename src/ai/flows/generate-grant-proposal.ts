@@ -13,18 +13,17 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateGrantProposalInputSchema = z.object({
-  grantDetails: z
-    .string()
-    .describe('Details about the grant, including title and funding amount.'),
-  pastProposals: z
-    .string()
-    .describe('Example of past successful grant proposals.'),
   projectSummary: z.string().describe('A summary of the project.'),
 });
 export type GenerateGrantProposalInput = z.infer<typeof GenerateGrantProposalInputSchema>;
 
 const GenerateGrantProposalOutputSchema = z.object({
-  proposal: z.string().describe('The generated grant proposal.'),
+  title: z.string().describe('A compelling title for the grant proposal.'),
+  introduction: z.string().describe('A detailed introduction section.'),
+  objectives: z.string().describe('A list of clear and measurable objectives.'),
+  methodology: z.string().describe('A description of the project methodology.'),
+  budget: z.string().describe('A summary of the project budget.'),
+  conclusion: z.string().describe('A concluding summary of the proposal.'),
 });
 export type GenerateGrantProposalOutput = z.infer<typeof GenerateGrantProposalOutputSchema>;
 
@@ -36,22 +35,18 @@ const prompt = ai.definePrompt({
   name: 'generateGrantProposalPrompt',
   input: {schema: GenerateGrantProposalInputSchema},
   output: {schema: GenerateGrantProposalOutputSchema},
-  prompt: `You are an expert grant writer. Use the following information to generate a tailored grant proposal.
-The entire proposal must be written in professional, formal language suitable for a submission. Do not use informal language or conversational tones.
-
-Grant Details: {{{grantDetails}}}
-
-Past Proposals: {{{pastProposals}}}
+  prompt: `You are an expert grant writer. Based on the provided project summary, generate a complete and formal grant proposal.
+The entire proposal must be written in professional, formal language suitable for a submission.
 
 Project Summary: {{{projectSummary}}}
 
-Structure the proposal with the following sections, ensuring each is well-developed:
-- Title
-- Introduction
-- Objectives
-- Methodology
-- Budget
-- Conclusion`,
+Generate a structured response with the following sections:
+- title: A compelling title for the grant proposal.
+- introduction: A detailed introduction section.
+- objectives: A list of clear and measurable objectives.
+- methodology: A description of the project methodology.
+- budget: A summary of the project budget.
+- conclusion: A concluding summary of the proposal.`,
 });
 
 const generateGrantProposalFlow = ai.defineFlow(

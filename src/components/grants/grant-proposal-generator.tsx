@@ -16,7 +16,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -30,42 +29,67 @@ import * as actions from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 <<<<<<< HEAD
+<<<<<<< HEAD
 import html2canvas from 'html2canvas';
 =======
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 >>>>>>> fb0067a (Grant Management)
+=======
+import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
+import { GenerateGrantProposalOutput } from '@/ai/flows/generate-grant-proposal';
+>>>>>>> 2c4745f (now change the ai propose generator to everything about grants and also)
 
 const proposalSchema = z.object({
-  grantDetails: z.string().min(10, 'Grant details are required'),
-  pastProposals: z.string().min(10, 'At least one past proposal example is required'),
   projectSummary: z.string().min(20, 'Project summary must be at least 20 characters'),
 });
 
+const SectionCard = ({ title, content }: { title: string, content: string }) => (
+  <Card>
+    <CardHeader>
+      <CardTitle>{title}</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <p className="whitespace-pre-wrap font-body text-sm">{content}</p>
+    </CardContent>
+  </Card>
+);
+
 export function GrantProposalGenerator() {
   const [isLoading, setIsLoading] = useState(false);
-  const [proposal, setProposal] = useState<string | null>(null);
+  const [proposal, setProposal] = useState<GenerateGrantProposalOutput | null>(null);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof proposalSchema>>({
     resolver: zodResolver(proposalSchema),
     defaultValues: {
-      grantDetails: '',
-      pastProposals: '',
       projectSummary: '',
     },
   });
 
+  const getFullProposalText = (proposalData: GenerateGrantProposalOutput | null) => {
+    if (!proposalData) return '';
+    return [
+      `Title: ${proposalData.title}`,
+      `\nIntroduction:\n${proposalData.introduction}`,
+      `\nObjectives:\n${proposalData.objectives}`,
+      `\nMethodology:\n${proposalData.methodology}`,
+      `\nBudget:\n${proposalData.budget}`,
+      `\nConclusion:\n${proposalData.conclusion}`,
+    ].join('\n\n');
+  };
+
   const handleDownloadPdf = () => {
     if (!proposal) return;
     const doc = new jsPDF();
+    const fullText = getFullProposalText(proposal);
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 15;
     const maxLineWidth = pageWidth - margin * 2;
     
-    const lines = doc.splitTextToSize(proposal, maxLineWidth);
+    const lines = doc.splitTextToSize(fullText, maxLineWidth);
     
     let cursorY = margin;
-    const lineHeight = 7; // Corresponds to font size 12
+    const lineHeight = 7; 
 
     lines.forEach((line: string) => {
         if (cursorY + lineHeight > doc.internal.pageSize.getHeight() - margin) {
@@ -81,15 +105,23 @@ export function GrantProposalGenerator() {
 
   const handleDownloadDocx = async () => {
     if (!proposal) return;
-
+    
     const doc = new Document({
       sections: [{
         properties: {},
-        children: proposal.split('\n').map(p => 
-            new Paragraph({
-                children: [new TextRun(p)]
-            })
-        )
+        children: [
+            new Paragraph({ text: proposal.title, heading: HeadingLevel.TITLE }),
+            new Paragraph({ text: "Introduction", heading: HeadingLevel.HEADING_1 }),
+            new Paragraph({ children: [new TextRun(proposal.introduction)] }),
+            new Paragraph({ text: "Objectives", heading: HeadingLevel.HEADING_1 }),
+            new Paragraph({ children: [new TextRun(proposal.objectives)] }),
+            new Paragraph({ text: "Methodology", heading: HeadingLevel.HEADING_1 }),
+            new Paragraph({ children: [new TextRun(proposal.methodology)] }),
+            new Paragraph({ text: "Budget", heading: HeadingLevel.HEADING_1 }),
+            new Paragraph({ children: [new TextRun(proposal.budget)] }),
+            new Paragraph({ text: "Conclusion", heading: HeadingLevel.HEADING_1 }),
+            new Paragraph({ children: [new TextRun(proposal.conclusion)] }),
+        ]
       }],
     });
 
@@ -111,7 +143,7 @@ export function GrantProposalGenerator() {
     try {
         const result = await actions.createGrantProposal(values);
         if(result) {
-            setProposal(result.proposal);
+            setProposal(result);
             toast({
                 title: 'Proposal Generated',
                 description: 'Your new grant proposal is ready below.',
@@ -136,47 +168,21 @@ export function GrantProposalGenerator() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="text-primary" />
-              AI Proposal Generator
+              Grant Proposal Generator
             </CardTitle>
             <CardDescription>
-              Generate a tailored grant proposal based on key information. The entire proposal will be written in professional, formal language.
+              Generate a tailored grant proposal based on your project summary. The entire proposal will be written in professional, formal language.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <FormField
               control={form.control}
-              name="grantDetails"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Grant Details</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Title, funding amount, key requirements..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="pastProposals"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Past Successful Proposals</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Paste examples of successful proposals for style reference..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
               name="projectSummary"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Your Project Summary</FormLabel>
+                  <FormLabel>Give us summary</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Summarize your project's goals and impact..." {...field} />
+                    <Textarea placeholder="Summarize your project's goals, impact, and key details..." {...field} rows={6} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -184,12 +190,18 @@ export function GrantProposalGenerator() {
             />
              {isLoading && <Skeleton className="h-40 w-full" />}
              {proposal && (
+<<<<<<< HEAD
                 <div id="proposal-content">
                     <h4 className="font-semibold text-lg mb-2">Generated Proposal</h4>
                     <div className="p-4 bg-muted/50 rounded-md prose prose-sm max-w-none prose-black">
                         <pre className="whitespace-pre-wrap font-body text-black bg-transparent p-0">{proposal}</pre>
                     </div>
                     <div className="flex gap-2 mt-4">
+=======
+                <div className="space-y-4">
+                    <h3 className="text-2xl font-headline font-bold text-center mt-6">{proposal.title}</h3>
+                    <div className="flex justify-center gap-2">
+>>>>>>> 2c4745f (now change the ai propose generator to everything about grants and also)
                         <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
                             <FileDown className="mr-2 h-4 w-4"/>
                             Download PDF
@@ -198,6 +210,13 @@ export function GrantProposalGenerator() {
                             <FileDown className="mr-2 h-4 w-4"/>
                             Download DOCX
                         </Button>
+                    </div>
+                    <div className="grid grid-cols-1 gap-6 pt-4">
+                      <SectionCard title="Introduction" content={proposal.introduction} />
+                      <SectionCard title="Objectives" content={proposal.objectives} />
+                      <SectionCard title="Methodology" content={proposal.methodology} />
+                      <SectionCard title="Budget" content={proposal.budget} />
+                      <SectionCard title="Conclusion" content={proposal.conclusion} />
                     </div>
                 </div>
              )}
