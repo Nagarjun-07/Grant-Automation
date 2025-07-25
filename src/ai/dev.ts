@@ -6,6 +6,5 @@ import '@/ai/flows/assess-trl-level.ts';
 import '@/ai/flows/generate-grant-proposal.ts';
 import '@/ai/flows/generate-experimental-validation.ts';
 import '@/ai/flows/summarize-technical-documentation.ts';
-import '@/ai/flows/search-grants.ts';
 import '@/ai/flows/simulate-unit-economics.ts';
 import '@/ai/flows/extract-text-from-document.ts';

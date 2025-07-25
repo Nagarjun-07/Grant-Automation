@@ -21,11 +21,6 @@ import {
   generateGrantProposal, 
   type GenerateGrantProposalInput 
 } from '@/ai/flows/generate-grant-proposal';
-import { 
-  searchGrants,
-  type SearchGrantsInput,
-  type SearchGrantsOutput,
-} from '@/ai/flows/search-grants';
 import {
   extractGrantDetails as extractGrantDetailsFlow,
   type ExtractGrantDetailsInput,
@@ -87,6 +82,7 @@ export async function createGrantProposal(input: GenerateGrantProposalInput) {
     }
 }
 
+<<<<<<< HEAD
 export async function generateProjectSummary() {
     try {
         return await generateProjectSummaryFlow();
@@ -114,6 +110,8 @@ export async function findGrants(input: SearchGrantsInput): Promise<SearchGrants
     }
 }
 
+=======
+>>>>>>> 073a56c (remove that grant search in that page just keep ai purpose generater)
 export async function runUnitEconomics(input: SimulateUnitEconomicsInput): Promise<SimulateUnitEconomicsOutput | null> {
     try {
         return await simulateUnitEconomics(input);
