@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -36,6 +37,7 @@ const prompt = ai.definePrompt({
   input: {schema: GenerateGrantProposalInputSchema},
   output: {schema: GenerateGrantProposalOutputSchema},
   prompt: `You are an expert grant writer. Use the following information to generate a tailored grant proposal.
+The entire proposal must be written in professional, formal language suitable for a submission. Do not use informal language or conversational tones.
 
 Grant Details: {{{grantDetails}}}
 
@@ -43,7 +45,7 @@ Past Proposals: {{{pastProposals}}}
 
 Project Summary: {{{projectSummary}}}
 
-Include the following sections in the proposal:
+Structure the proposal with the following sections, ensuring each is well-developed:
 - Title
 - Introduction
 - Objectives

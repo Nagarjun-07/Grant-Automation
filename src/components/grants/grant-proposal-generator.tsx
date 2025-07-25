@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -57,7 +58,24 @@ export function GrantProposalGenerator() {
   const handleDownloadPdf = () => {
     if (!proposal) return;
     const doc = new jsPDF();
-    doc.text(proposal, 10, 10);
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 15;
+    const maxLineWidth = pageWidth - margin * 2;
+    
+    const lines = doc.splitTextToSize(proposal, maxLineWidth);
+    
+    let cursorY = margin;
+    const lineHeight = 7; // Corresponds to font size 12
+
+    lines.forEach((line: string) => {
+        if (cursorY + lineHeight > doc.internal.pageSize.getHeight() - margin) {
+            doc.addPage();
+            cursorY = margin;
+        }
+        doc.text(line, margin, cursorY);
+        cursorY += lineHeight;
+    });
+
     doc.save('grant-proposal.pdf');
   };
 
@@ -121,7 +139,7 @@ export function GrantProposalGenerator() {
               AI Proposal Generator
             </CardTitle>
             <CardDescription>
-              Generate a tailored grant proposal based on key information.
+              Generate a tailored grant proposal based on key information. The entire proposal will be written in professional, formal language.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -169,7 +187,7 @@ export function GrantProposalGenerator() {
                 <div id="proposal-content">
                     <h4 className="font-semibold text-lg mb-2">Generated Proposal</h4>
                     <div className="p-4 bg-muted/50 rounded-md prose prose-sm max-w-none prose-black">
-                        <pre className="whitespace-pre-wrap font-body bg-transparent p-0">{proposal}</pre>
+                        <pre className="whitespace-pre-wrap font-body text-black bg-transparent p-0">{proposal}</pre>
                     </div>
                     <div className="flex gap-2 mt-4">
                         <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
