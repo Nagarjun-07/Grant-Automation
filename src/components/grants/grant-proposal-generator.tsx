@@ -131,28 +131,8 @@ export function GrantProposalGenerator() {
              {proposal && (
                 <div id="proposal-content">
                     <h4 className="font-semibold text-lg mb-2">Generated Proposal</h4>
-                    <div className="p-4 bg-muted/50 rounded-md max-w-none">
-                        <pre className="whitespace-pre-wrap font-body bg-transparent p-0" style={{color: 'black'}}>{proposal.replace(/\*/g, '')}</pre>
-                    </div>
-                    <div className="flex gap-2 mt-4">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                                const input = document.getElementById('proposal-content');
-                                if (input) {
-                                    html2canvas(input).then(canvas => {
-                                        const imgData = canvas.toDataURL('image/png');
-                                        const pdf = new jsPDF();
-                                        pdf.addImage(imgData, 'PNG', 0, 0);
-                                        pdf.save('proposal.pdf');
-                                    });
-                                }
-                            }}
-                        >
-                            <FileDown className="mr-2 h-4 w-4" />
-                            Download as PDF
-                        </Button>
+                    <div className="p-4 bg-muted/50 rounded-md prose prose-sm max-w-none text-foreground">
+                        <pre className="whitespace-pre-wrap font-body bg-transparent p-0">{proposal}</pre>
                     </div>
                 </div>
              )}
