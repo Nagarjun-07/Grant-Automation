@@ -131,8 +131,8 @@ export function GrantProposalGenerator() {
              {proposal && (
                 <div id="proposal-content">
                     <h4 className="font-semibold text-lg mb-2">Generated Proposal</h4>
-                    <div className="p-4 bg-muted/50 rounded-md prose prose-sm max-w-none text-foreground">
-                        <pre className="whitespace-pre-wrap font-body bg-transparent p-0">{proposal}</pre>
+                    <div className="p-4 bg-muted/50 rounded-md prose prose-sm max-w-none">
+                        <pre className="whitespace-pre-wrap font-body bg-transparent p-0 text-black">{proposal}</pre>
                     </div>
                 </div>
              )}
