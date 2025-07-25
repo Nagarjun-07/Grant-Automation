@@ -15,6 +15,7 @@ import {
   ClipboardCheck,
   DollarSign,
   ExternalLink,
+  ChevronDown,
 } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -38,11 +39,12 @@ import { ValidationAndRisksOutput } from '@/ai/flows/generate-experimental-valid
 import { TRLBreakdownOutput } from '@/ai/flows/assess-trl-level';
 import { RandDPipelineOutput } from '@/ai/flows/generate-r-and-d-roadmap';
 import { SimulateUnitEconomicsOutput } from '@/ai/flows/simulate-unit-economics';
-import { SearchGrantsOutput } from '@/ai/flows/search-grants';
+import { StrategicGrantAnalysisOutput } from '@/ai/flows/strategic-grant-analysis';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
-const SAMPLE_TECHNICAL_DOCUMENTATION = `The BR-X10 is a novel stirred-tank bioreactor designed for mammalian cell culture. It features a 10L working volume with a borosilicate glass vessel. The system incorporates a magnetic-drive agitation system with a pitched-blade impeller, ensuring low-shear mixing. Key components include the agitation system, vessel, and headplate. Advanced process control is achieved via a dedicated PLC with a user-friendly HMI. Sensors for pH (range 6.0-8.0), dissolved oxygen (DO, 0-100% saturation), and temperature (25-45°C) are integrated. The sparging system uses a microporous sparger for efficient oxygen transfer. The system is designed for batch, fed-batch, and perfusion processes. Sterilization is performed via autoclaving. The headplate includes multiple ports for media addition, sampling, and sensor integration. A peristaltic pump is used for media transfer.`;
+const SAMPLE_TECHNICAL_DOCUMENTATION = `The BR-X10 is a novel stirred-tank bioreactor designed for mammalian cell culture. It features a 10L working volume with a borosilicate glass vessel. The system incorporates a magnetic-drive agitation system with a pitched-blade impeller, ensuring low-shear mixing. Key components include the agitation system, vessel, and headplate. Advanced process control is achieved via a dedicated PLC with a user-friendly HMI. Sensors for pH (range 6.0-8.0), dissolved oxygen (DO, 0-100% saturation), and temperature (25-45°C) are integrated. The sparging system uses a microporous sparger for efficient oxygen transfer. The system is designed for batch, fed-batch, and perfusion processes. Sterilization is performed via autoclaving. The headplate includes multiple ports for media addition, sampling, and sensor integration. A peristaltic pump is used for media transfer. The technology addresses the need for scalable, low-cost bioreactors for vaccine and monoclonal antibody production, targeting a 30% reduction in production costs and enabling decentralized manufacturing. The innovation lies in the single-use, disposable vessel design, which eliminates cleaning and sterilization cycles, reducing turnaround time and contamination risk.`;
 
 type AnalysisState = {
   summary: string | null;
@@ -50,7 +52,7 @@ type AnalysisState = {
   trlBreakdown: TRLBreakdownOutput | null;
   randDPipeline: RandDPipelineOutput | null;
   unitEconomics: SimulateUnitEconomicsOutput | null;
-  grantRecommendations: SearchGrantsOutput | null;
+  grantRecommendations: StrategicGrantAnalysisOutput | null;
 };
 
 const economicsSchema = z.object({
@@ -114,7 +116,7 @@ export default function DashboardPage() {
        toast({
         variant: 'destructive',
         title: `${tab.charAt(0).toUpperCase() + tab.slice(1)} Analysis Failed`,
-        description: `Could not generate ${tab} analysis.`,
+        description: `Could not generate ${tab} analysis. Please try again.`,
       });
     } finally {
       setLoadingStates(prev => ({...prev, [tab]: false}));
@@ -151,7 +153,7 @@ export default function DashboardPage() {
             break;
         case 'grants':
             if (!analysis.grantRecommendations) {
-                runAnalysis('grants', () => actions.findRecommendedGrants({ documentText: docText }), 'grantRecommendations');
+                runAnalysis('grants', () => actions.findRecommendedGrants({ technicalDocumentation: docText }), 'grantRecommendations');
             }
             break;
     }
@@ -509,13 +511,13 @@ export default function DashboardPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Grant Recommendations</CardTitle>
-                        <CardDescription>AI-powered grant recommendations based on your technical document.</CardDescription>
+                        <CardDescription>AI-powered strategic grant recommendations based on your technical document.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         {loadingStates.grants && (
-                             <div className="space-y-2">
-                                <Skeleton className="h-24 w-full" />
-                                <Skeleton className="h-24 w-full" />
+                             <div className="space-y-4">
+                                <Skeleton className="h-28 w-full" />
+                                <Skeleton className="h-28 w-full" />
                             </div>
                         )}
                         {!loadingStates.grants && (!analysis.grantRecommendations || analysis.grantRecommendations.length === 0) && (
@@ -524,17 +526,41 @@ export default function DashboardPage() {
                             </p>
                         )}
                          {!loadingStates.grants && analysis.grantRecommendations && analysis.grantRecommendations.length > 0 && (
-                            <div className="space-y-3">
-                            {analysis.grantRecommendations.map((grant, index) => (
-                                <div key={index} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                                <a href={grant.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-semibold text-primary hover:underline">
-                                    {grant.title}
-                                    <ExternalLink className="w-4 h-4" />
-                                </a>
-                                <div className="flex items-center gap-1 text-sm font-medium mt-2"><DollarSign className="w-3.5 h-3.5" />{grant.funding}</div>
-                                </div>
-                            ))}
-                            </div>
+                            <Accordion type="single" collapsible className="w-full space-y-4">
+                              {analysis.grantRecommendations.map((grant, index) => (
+                                <AccordionItem value={`item-${index}`} key={index} className="border rounded-lg bg-background/50">
+                                  <AccordionTrigger className="p-4 hover:no-underline">
+                                    <div className="text-left w-full">
+                                      <div className="flex items-center gap-2 font-semibold text-primary">
+                                        {grant.title}
+                                        <ExternalLink className="w-4 h-4" />
+                                      </div>
+                                      <div className="flex items-center gap-1 text-sm font-medium mt-2"><DollarSign className="w-3.5 h-3.5" />{grant.funding}</div>
+                                    </div>
+                                  </AccordionTrigger>
+                                  <AccordionContent className="p-4 pt-0">
+                                    <div className="space-y-4">
+                                        <div>
+                                            <h4 className="font-semibold mb-1">Funding Purpose</h4>
+                                            <p className="text-sm text-muted-foreground">{grant.purpose}</p>
+                                        </div>
+                                         <div>
+                                            <h4 className="font-semibold mb-1">Eligibility</h4>
+                                            <p className="text-sm text-muted-foreground">{grant.eligibility}</p>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold mb-1">Why it's a Fit</h4>
+                                            <p className="text-sm text-muted-foreground">{grant.fitReason}</p>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold mb-1">How to Align Your Proposal</h4>
+                                            <p className="text-sm text-muted-foreground">{grant.alignmentTips}</p>
+                                        </div>
+                                    </div>
+                                  </AccordionContent>
+                                </AccordionItem>
+                              ))}
+                            </Accordion>
                         )}
                     </CardContent>
                 </Card>
