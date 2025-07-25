@@ -23,8 +23,7 @@ import {
 } from '@/ai/flows/generate-grant-proposal';
 import { 
   searchGrants,
-  type SearchGrantsInput,
-  type SearchGrantsOutput
+  type SearchGrantsInput
 } from '@/ai/flows/search-grants';
 import {
   extractGrantDetails as extractGrantDetailsFlow,
@@ -40,6 +39,7 @@ import {
   type SimulateUnitEconomicsOutput,
 } from '@/ai/flows/simulate-unit-economics';
 import { extractTextFromDocument as extractTextFromDocumentFlow, type ExtractTextFromDocumentInput } from '@/ai/flows/extract-text-from-document';
+import { SearchGrantsOutput } from '@/ai/flows/search-grants';
 
 
 export async function summarize(input: { documentText: string }) {
@@ -131,4 +131,13 @@ export async function extractText(input: ExtractTextFromDocumentInput) {
     console.error(e);
     return null;
   }
+}
+
+export async function findRecommendedGrants(input: { documentText: string }): Promise<SearchGrantsOutput | null> {
+    try {
+        return await searchGrants({ keywords: input.documentText });
+    } catch(e) {
+        console.error(e);
+        return null;
+    }
 }

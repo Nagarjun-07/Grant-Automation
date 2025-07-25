@@ -100,16 +100,16 @@ export default function DashboardPage() {
     setActiveTab('insights');
   };
 
-  const runAnalysis = async <K extends keyof AnalysisState>(tab: string, analysisFn: () => Promise<Partial<AnalysisState> | null>, stateKey: K) => {
+  const runAnalysis = async <K extends keyof AnalysisState>(tab: string, analysisFn: () => Promise<any>, stateKey: K) => {
     setLoadingStates(prev => ({...prev, [tab]: true}));
     setAnalysis(prev => ({...prev, [stateKey]: null}));
     try {
-      const result = await analysisFn();
-      if(result) {
-        setAnalysis(prev => ({...prev, ...result}));
-      } else {
-        throw new Error('Analysis function returned null');
-      }
+        const result = await analysisFn();
+        if(result) {
+            setAnalysis(prev => ({...prev, [stateKey]: result}));
+        } else {
+            throw new Error(`Analysis function for ${tab} returned null`);
+        }
     } catch (error) {
        toast({
         variant: 'destructive',
@@ -119,7 +119,7 @@ export default function DashboardPage() {
     } finally {
       setLoadingStates(prev => ({...prev, [tab]: false}));
     }
-  }
+}
 
   const handleTabChange = async (tab: string) => {
     setActiveTab(tab);
@@ -128,25 +128,22 @@ export default function DashboardPage() {
     switch(tab) {
         case 'insights':
             if (!analysis.summary) {
-                runAnalysis('insights', async () => {
-                    const summaryRes = await actions.summarize({ documentText: docText });
-                    return { summary: summaryRes?.summary };
-                }, 'summary');
+                runAnalysis('insights', () => actions.summarize({ documentText: docText }), 'summary');
             }
             break;
         case 'validation':
             if (!analysis.validationAndRisks) {
-                runAnalysis('validation', async () => ({ validationAndRisks: await actions.validationAndRisks({ technicalDocumentation: docText }) }), 'validationAndRisks');
+                runAnalysis('validation', () => actions.validationAndRisks({ technicalDocumentation: docText }), 'validationAndRisks');
             }
             break;
         case 'trl':
             if (!analysis.trlBreakdown) {
-                 runAnalysis('trl', async () => ({ trlBreakdown: await actions.trlBreakdown({ technicalDocumentation: docText }) }), 'trlBreakdown');
+                 runAnalysis('trl', () => actions.trlBreakdown({ technicalDocumentation: docText }), 'trlBreakdown');
             }
             break;
         case 'roadmap':
             if(!analysis.randDPipeline) {
-                 runAnalysis('roadmap', async () => ({ randDPipeline: await actions.randDPipeline({ technicalDocumentation: docText }) }), 'randDPipeline');
+                 runAnalysis('roadmap', () => actions.randDPipeline({ technicalDocumentation: docText }), 'randDPipeline');
             }
             break;
         case 'economics':
@@ -154,7 +151,7 @@ export default function DashboardPage() {
             break;
         case 'grants':
             if (!analysis.grantRecommendations) {
-                runAnalysis('grants', async () => ({ grantRecommendations: await actions.findGrants({ documentText: docText }) }), 'grantRecommendations');
+                runAnalysis('grants', () => actions.findRecommendedGrants({ documentText: docText }), 'grantRecommendations');
             }
             break;
     }
@@ -345,7 +342,7 @@ export default function DashboardPage() {
                 <Card>
                     <CardHeader><CardTitle>LLM Insight Analysis</CardTitle></CardHeader>
                     <CardContent>
-                      {renderContent(analysis.summary, loadingStates.insights, 'summary')}
+                      {loadingStates.insights ? <Skeleton className="h-48 w-full" /> : renderContent(analysis.summary?.summary, loadingStates.insights, 'summary')}
                     </CardContent>
                 </Card>
             </TabsContent>
