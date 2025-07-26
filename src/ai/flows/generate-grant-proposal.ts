@@ -1,6 +1,5 @@
 
 'use server';
-
 /**
  * @fileOverview Grant proposal generator.
  *
