@@ -1,4 +1,3 @@
-
 import { GrantProposalGenerator } from "@/components/grants/grant-proposal-generator";
 
 export default function GrantsPage() {
