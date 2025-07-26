@@ -19,7 +19,6 @@ import { Separator } from '@/components/ui/separator';
 
 export function AppSidebar() {
   const pathname = usePathname();
-
   const menuItems = [
     {
       href: '/',
