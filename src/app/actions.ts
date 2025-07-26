@@ -83,7 +83,6 @@ export async function createGrantProposal(input: GenerateGrantProposalInput): Pr
     }
 }
 
-<<<<<<< HEAD
 export async function generateProjectSummary() {
     try {
         return await generateProjectSummaryFlow();
@@ -102,17 +101,6 @@ export async function extractGrantDetails(input: ExtractGrantDetailsInput): Prom
     }
 }
 
-export async function findGrants(input: SearchGrantsInput): Promise<SearchGrantsOutput | null> {
-    try {
-        return await searchGrants(input);
-    } catch(e) {
-        console.error(e);
-        return null;
-    }
-}
-
-=======
->>>>>>> 073a56c (remove that grant search in that page just keep ai purpose generater)
 export async function runUnitEconomics(input: SimulateUnitEconomicsInput): Promise<SimulateUnitEconomicsOutput | null> {
     try {
         return await simulateUnitEconomics(input);
