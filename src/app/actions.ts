@@ -37,7 +37,6 @@ import {
 } from '@/ai/flows/simulate-unit-economics';
 import { extractTextFromDocument as extractTextFromDocumentFlow, type ExtractTextFromDocumentInput } from '@/ai/flows/extract-text-from-document';
 
-
 export async function summarize(input: { documentText: string }) {
   try {
     return await summarizeTechnicalDocumentation(input);
