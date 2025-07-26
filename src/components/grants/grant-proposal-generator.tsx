@@ -28,16 +28,8 @@ import { Sparkles, Loader2, FileDown } from 'lucide-react';
 import * as actions from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
-<<<<<<< HEAD
-<<<<<<< HEAD
-import html2canvas from 'html2canvas';
-=======
-import { Document, Packer, Paragraph, TextRun } from 'docx';
->>>>>>> fb0067a (Grant Management)
-=======
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { GenerateGrantProposalOutput } from '@/ai/flows/generate-grant-proposal';
->>>>>>> 2c4745f (now change the ai propose generator to everything about grants and also)
 
 const proposalSchema = z.object({
   projectSummary: z.string().min(20, 'Project summary must be at least 20 characters'),
@@ -190,18 +182,9 @@ export function GrantProposalGenerator() {
             />
              {isLoading && <Skeleton className="h-40 w-full" />}
              {proposal && (
-<<<<<<< HEAD
-                <div id="proposal-content">
-                    <h4 className="font-semibold text-lg mb-2">Generated Proposal</h4>
-                    <div className="p-4 bg-muted/50 rounded-md prose prose-sm max-w-none prose-black">
-                        <pre className="whitespace-pre-wrap font-body text-black bg-transparent p-0">{proposal}</pre>
-                    </div>
-                    <div className="flex gap-2 mt-4">
-=======
                 <div className="space-y-4">
                     <h3 className="text-2xl font-headline font-bold text-center mt-6">{proposal.title}</h3>
                     <div className="flex justify-center gap-2">
->>>>>>> 2c4745f (now change the ai propose generator to everything about grants and also)
                         <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
                             <FileDown className="mr-2 h-4 w-4"/>
                             Download PDF
